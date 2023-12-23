@@ -1,11 +1,8 @@
-const path = require('path')
-
-import { app, shell, BrowserWindow, ipcMain, dialog } from 'electron'
+import { app, shell, BrowserWindow, ipcMain } from 'electron'
 import { join } from 'path'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import icon from '../../resources/icon.png?asset'
-import prompt from 'electron-prompt'
-import { exec } from 'child_process'
+import { downloadMap, setDwldToken } from './utils'
 
 function createWindow() {
   // Create the browser window.
@@ -21,9 +18,8 @@ function createWindow() {
     }
   })
 
-  ipcMain.on('downloadMap', (event, zoom, extent) => {
-    downloadMap(zoom, extent)
-  })
+  ipcMain.on('downloadMap', (event, zoom, extent) => downloadMap(zoom, extent))
+  ipcMain.on('setDwldToken', (event) => setDwldToken())
 
   mainWindow.on('ready-to-show', () => {
     mainWindow.show()
@@ -77,71 +73,3 @@ app.on('window-all-closed', () => {
 
 // In this file you can include the rest of your app"s specific main process
 // code. You can also put them in separate files and require them here.
-
-const showNote = (type, title, body) => {
-  dialog.showMessageBoxSync(null, {
-    type: type,
-    buttons: ['Ok'],
-    defaultId: 0,
-    cancelId: 0,
-    message: body,
-    title: title
-  })
-}
-
-const downloadMap = (zoom, extent) => {
-  const prompt_config = {
-    title: '缩放等级',
-    label: '请输入缩放等级',
-    type: 'input',
-    value: zoom,
-    inputAttrs: { type: 'text', required: true },
-    height: 150
-  }
-
-  prompt(prompt_config)
-    .then((r) => {
-      if (r === null) {
-        console.log('user cancelled')
-      } else {
-        zoom = parseInt(r)
-
-        if (isNaN(zoom) || zoom < 6 || zoom > 18) {
-          showNote('error', 'error', '请输入正确的数字')
-          return
-        }
-
-        const output_path = dialog.showSaveDialogSync({
-          title: '保存',
-          defaultPath: path.join(app.getPath('downloads'), 'output.tif'),
-          filters: [
-            {
-              name: 'GeoTIFF',
-              extensions: ['tif', 'tiff', 'geotiff']
-            }
-          ]
-        })
-        if (!output_path) return
-
-        const full_command = [
-          import.meta.env.MAIN_VITE_PYTHON_ACTIVATE_PATH,
-          '&',
-          'python',
-          import.meta.env.MAIN_VITE_PYTHON_SCRIPT_PATH,
-          output_path,
-          zoom,
-          extent[0],
-          extent[1],
-          extent[2],
-          extent[3]
-        ].join(' ')
-
-        exec(full_command, (error, stdout, stderr) => {
-          if (error) showNote('error', 'error', error)
-          else if (stderr) showNote('error', 'stderr', stderr)
-          else showNote('info', 'stdout', stdout)
-        })
-      }
-    })
-    .catch(console.error)
-}
