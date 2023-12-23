@@ -1,6 +1,6 @@
 {
   "name": "tif_downloader",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "description": "GeoTIFF downloader based on Electron and Vue",
   "main": "./out/main/index.js",
   "author": "Zhang Chi",

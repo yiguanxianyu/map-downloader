@@ -2,7 +2,7 @@ import prompt from 'electron-prompt'
 import { exec } from 'child_process'
 import { reactive, watch } from 'vue'
 import { app, dialog } from 'electron'
-import { join } from 'path'
+import { join, resolve } from 'path'
 import fs from 'fs'
 
 const configPath = join(app.getPath('userData'), 'config.json')
@@ -33,7 +33,7 @@ const showNote = (type, title, body) => {
     buttons: ['Ok'],
     defaultId: 0,
     cancelId: 0,
-    message: body,
+    message: body.toString(),
     title: title
   })
 }
@@ -62,7 +62,7 @@ const downloadMap = (zoom, extent) => {
     type: 'input',
     value: zoom,
     inputAttrs: { type: 'text', required: true },
-    height: 150
+    height: 200
   }
 
   prompt(prompt_config)
@@ -81,10 +81,10 @@ const downloadMap = (zoom, extent) => {
         if (!output_path) return
 
         const full_command = [
-          import.meta.env.MAIN_VITE_PYTHON_ACTIVATE_PATH,
-          '&',
-          'python',
-          import.meta.env.MAIN_VITE_PYTHON_SCRIPT_PATH,
+          resolve(import.meta.env.MAIN_VITE_PYTHON_ACTIVATE_PATH),
+          //   '&',
+          //   'python',
+          resolve(import.meta.env.MAIN_VITE_PYTHON_SCRIPT_PATH),
           output_path,
           zoom,
           configData.dwld_token,
@@ -111,7 +111,7 @@ const setDwldToken = () => {
     type: 'input',
     value: configData.dwld_token,
     inputAttrs: { type: 'text', required: true },
-    height: 180
+    height: 200
   }).then((r) => {
     if (r === null) {
       console.log('user cancelled')

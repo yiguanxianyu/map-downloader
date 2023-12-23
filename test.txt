@@ -1,1 +1,0 @@
-['C:/Users/xianyu/source/electron-vue/test.py', 'C:\\Users\\xianyu\\Downloads\\output.tif', '6', '11985517.932285624', '4175944.2492071325', '13908062.067714376', '5553033.7507928675']
