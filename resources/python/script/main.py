@@ -23,6 +23,7 @@ from rasterio.io import MemoryFile
 
 MERCATOR_CONSTANT = 20037508.3427892
 IMG_SIZE = 256
+TIANDITU_URL = "https://t4.tianditu.gov.cn/DataServer?T=img_w&x={}&y={}&l={}&tk={}"
 
 
 def tile_coord_to_latlng(x_tile, y_tile, zoom) -> tuple[float, float]:
@@ -51,7 +52,7 @@ def lonlat_3857_to_4326(x, y):
 
 
 def producer(queue, token, xrange, yrange, zoom_level):
-    url = "https://t4.tianditu.gov.cn/DataServer?T=img_w&x={}&y={}&l={}&tk={}"
+    url = TIANDITU_URL
     for x in xrange:
         for y in yrange:
             r = requests.get(url=url.format(x, y, zoom_level, token))
@@ -67,7 +68,7 @@ def producer(queue, token, xrange, yrange, zoom_level):
 
 
 # 消费者函数
-def consumer(queue, xrange, yrange, zoom_level, output_path):
+def consumer(queue, xrange, yrange, zoom_level, output_path, original_coords):
     lngmin, latmax = tile_coord_to_latlng(xrange[0], yrange[0], zoom_level)
     lngmax, latmin = tile_coord_to_latlng(xrange[-1] + 1, yrange[-1] + 1, zoom_level)
     height = len(yrange) * IMG_SIZE
@@ -76,7 +77,7 @@ def consumer(queue, xrange, yrange, zoom_level, output_path):
     transform_temp = rio_transform.from_bounds(
         lngmin, latmin, lngmax, latmax, width=width, height=height
     )
-    window_cut = rio_windows.from_bounds(lngmin, latmin, lngmax, latmax, transform=transform_temp)
+    window_cut = rio_windows.from_bounds(*original_coords, transform=transform_temp)
     transform_cut = rio_windows.transform(window_cut, transform_temp)
 
     temp_metadata = dict(
@@ -115,6 +116,7 @@ def consumer(queue, xrange, yrange, zoom_level, output_path):
 def main(output_path, z, token, minx, miny, maxx, maxy):
     lon_min, lat_min = lonlat_3857_to_4326(minx, miny)
     lon_max, lat_max = lonlat_3857_to_4326(maxx, maxy)
+    original_coords = (lon_min, lat_min, lon_max, lat_max)
     # print(lat_min, lat_max, lon_min, lon_max)
 
     col_min, row_max = latlng_to_tile_coord(lat_min, lon_min, z)
@@ -135,7 +137,7 @@ def main(output_path, z, token, minx, miny, maxx, maxy):
     )
 
     # 创建消费者进程
-    consumer_ = Process(target=consumer, args=(queue, xr, yr, z, output_path))
+    consumer_ = Process(target=consumer, args=(queue, xr, yr, z, output_path, original_coords))
 
     # 启动进程
     producer_.start()
@@ -178,6 +180,9 @@ if __name__ == "__main__":
     min_y = args.min_y
     max_x = args.max_x
     max_y = args.max_y
+
+    if output_path.exists():
+        output_path.unlink()
 
     # 执行主函数
     main(output_path, zoom_level, token, min_x, min_y, max_x, max_y)

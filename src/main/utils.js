@@ -82,8 +82,6 @@ const downloadMap = (zoom, extent) => {
 
         const full_command = [
           resolve(import.meta.env.MAIN_VITE_PYTHON_ACTIVATE_PATH),
-          //   '&',
-          //   'python',
           resolve(import.meta.env.MAIN_VITE_PYTHON_SCRIPT_PATH),
           output_path,
           zoom,
