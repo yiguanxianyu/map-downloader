@@ -1,310 +1,149 @@
 """
 main.py
 
-Ma Yubo original version 2023.12.28
+Zhang Chi version 2023.12.28
+
+credit to Ma yubo for the base code
 
 """
-import os
-import rasterio
-from rasterio.transform import from_origin
-from PIL import Image
-import numpy as np
-from rasterio.merge import merge
-from rasterio.enums import Resampling
-from pyproj import Proj, transform
-import math
-import requests
+import sys
 import argparse
+from io import BytesIO
+from math import atan, cos, exp, log, pi, tan
+from multiprocessing import Process, Queue
 from pathlib import Path
-import geopandas as gpd
-from shapely.geometry import Polygon
-from rasterio.mask import mask
+
+import numpy as np
+import rasterio
+import rasterio.transform as rio_transform
+import rasterio.windows as rio_windows
+import requests
+from PIL import Image
+from rasterio.io import MemoryFile
+
+MERCATOR_CONSTANT = 20037508.3427892
+IMG_SIZE = 256
 
 
-def mercator_to_tile_index(x, y, level):
-    """
-    3857 墨卡托坐标转换为瓦片序号
-    :param x: X 坐标
-    :param y: Y 坐标
-    :param level: 放大级别
-    :return: (瓦片的行号, 瓦片的列号)
-    """
-    tile_size = 256
-    res = 2 * math.pi * 6378137 / (tile_size * 2**level)
-    col = int((x + 20037508.3427892) / (tile_size * res))
-    row = int((20037508.3427892 - y) / (tile_size * res))
-    return col, row
+def tile_coord_to_latlng(x_tile, y_tile, zoom) -> tuple[float, float]:
+    """Correctly converts tile coordinates to latitude and longitude at a given zoom level."""
+    n = 2.0**zoom
+    lon_deg = x_tile / n * 360.0 - 180.0
+    lat_rad = atan(exp((1 - 2 * y_tile / n) * pi)) * 2 - pi / 2
+    lat_deg = lat_rad * 180.0 / pi
+    return lon_deg, lat_deg
 
 
-def lonlat_3857_to_4326(lon_3857, lat_3857):
-    lon = lon_3857 / 20037508.34 * 180
-    lat = lat_3857 / 20037508.34 * 180
-    lat = 180 / np.pi * (2 * np.arctan(np.exp(lat * np.pi / 180)) - np.pi / 2)
-
-    # print(f"lon_3857: {lon_3857}, lat_3857: {lat_3857} => lon: {lon}, lat: {lat}")
-
-    return lon, lat
-
-
-def tile_index_to_mercator(col, row, level):
-    """
-    瓦片序号转换为 3857 墨卡托坐标
-    :param col: 瓦片的列号
-    :param row: 瓦片的行号
-    :param level: 放大级别
-    :return: (X 坐标, Y 坐标)
-    """
-    tile_size = 256
-    res = 2 * math.pi * 6378137 / (tile_size * 2**level)
-    x = col * tile_size * res - 20037508.3427892
-    y = 20037508.3427892 - row * tile_size * res
-
-    # print(f"col: {col}, row: {row}, level: {level} => x: {x}, y: {y}")
-
-    return x, y
+def latlng_to_tile_coord(lat, lng, zoom):
+    """Converts latitude and longitude to tile coordinates at a given zoom level."""
+    lat_rad = lat * pi / 180
+    n = 2.0**zoom
+    xtile = int((lng + 180.0) / 360.0 * n)
+    ytile = int((1.0 - log(tan(lat_rad) + 1 / cos(lat_rad)) / pi) / 2.0 * n)
+    return xtile, ytile
 
 
-def create_polygon_shapefile(output_path, minx, miny, maxx, maxy):
-    # 将 xmin、ymin、xmax、ymax 转换为 4326 坐标系下的经纬度
-    lon_left, lat_bottom = lonlat_3857_to_4326(minx, miny)
-    lon_right, lat_top = lonlat_3857_to_4326(maxx, maxy)
+def lonlat_3857_to_4326(x, y):
+    """Converts EPSG:3857 to latitude and longitude."""
+    longitude = x / MERCATOR_CONSTANT * 180
+    latitude = atan(exp(y / MERCATOR_CONSTANT * pi)) * 360 / pi - 90
+    return longitude, latitude
 
-    # 构建 Polygon 对象
-    polygon = Polygon(
-        [(lon_left, lat_bottom), (lon_right, lat_bottom), (lon_right, lat_top), (lon_left, lat_top)]
+
+def producer(queue, token, xrange, yrange, zoom_level):
+    url = "https://t4.tianditu.gov.cn/DataServer?T=img_w&x={}&y={}&l={}&tk={}"
+    for x in xrange:
+        for y in yrange:
+            r = requests.get(url=url.format(x, y, zoom_level, token))
+            r.raise_for_status()
+            if r.status_code == 200:
+                image_bytes = BytesIO(r.content)
+                image = Image.open(image_bytes)
+                image_gdal_format = np.array(image).transpose(2, 0, 1)
+                queue.put((x, y, image_gdal_format))
+
+    queue.put(None)
+    print("Data download finished!")
+
+
+# 消费者函数
+def consumer(queue, xrange, yrange, zoom_level, output_path):
+    lngmin, latmax = tile_coord_to_latlng(xrange[0], yrange[0], zoom_level)
+    lngmax, latmin = tile_coord_to_latlng(xrange[-1] + 1, yrange[-1] + 1, zoom_level)
+    height = len(yrange) * IMG_SIZE
+    width = len(xrange) * IMG_SIZE
+
+    transform_temp = rio_transform.from_bounds(
+        lngmin, latmin, lngmax, latmax, width=width, height=height
     )
+    window_cut = rio_windows.from_bounds(lngmin, latmin, lngmax, latmax, transform=transform_temp)
+    transform_cut = rio_windows.transform(window_cut, transform_temp)
 
-    # 创建 GeoDataFrame，指定坐标系为 EPSG:4326
-    gdf = gpd.GeoDataFrame(geometry=[polygon], crs="EPSG:4326")
-
-    # 将 GeoDataFrame 保存为 Shapefile 文件
-    gdf.to_file(output_path, driver="ESRI Shapefile")
-
-
-def download_pic(x, y, z, token, tmp_path):
-    try:
-        key = token
-        for xi in x:
-            for yi in y:
-                url = f"https://t4.tianditu.gov.cn/DataServer?T=img_w&x={xi}&y={yi}&l={z}&tk={key}"
-                fileName = os.path.join(tmp_path, f"{xi}_{yi}_{z}.png")
-                if not os.path.exists(fileName):
-                    r = requests.get(url=url)
-                    r.raise_for_status()
-                    if r.status_code == 200:
-                        with open(fileName, "wb") as f:
-                            for chunk in r.iter_content(chunk_size=128):
-                                f.write(chunk)
-                    else:
-                        print("Error - Status Code:", r.status_code)
-                else:
-                    print(f"File already exists: {fileName}")
-
-    except requests.exceptions.RequestException as e:
-        print("Request error:", e)
-    except Exception as e:
-        print("Other error:", e)
-
-
-def convert_single_band_to_rgb(png_path, tif_path, tile_xyz):
-    # 读取 PNG 文件
-    img = Image.open(png_path)
-    img_array = np.array(img)
-
-    # 获取图像的宽度和高度
-    height, width = img_array.shape[:2]
-
-    # 获取 PNG 的坐标参考系统等信息，这里假定使用默认的坐标参考系统
-    png_crs = "EPSG:4326"
-
-    # 根据 x, y, z 信息计算经纬度范围
-    lon_left, lat_bottom, lon_right, lat_top = xyz_to_bbox(tile_xyz)
-
-    # 创建输出数据集
-    with rasterio.open(
-        tif_path,
-        "w",
+    temp_metadata = dict(
         driver="GTiff",
         height=height,
         width=width,
-        count=3,  # 设置为 3，表示 RGB 彩色图像
-        dtype=np.uint8,
-        crs=png_crs,
-        transform=from_origin(
-            lon_left, lat_top, (lon_right - lon_left) / width, (lat_top - lat_bottom) / height
-        ),
-    ) as dst:
-        # 将单波段的彩色图像拆分成三个波段
-        for i in range(3):
-            dst.write(img_array[:, :, i], i + 1)
+        count=3,
+        dtype="uint8",
+        crs="epsg:4326",
+        transform=transform_temp,
+    )
 
-
-def xyz_to_bbox(tile_xyz):
-    x, y, z = tile_xyz
-    # 转换为 3857 坐标系下的 x, y
-    lon_left_3857, lat_top_3857 = tile_index_to_mercator(x, y, z)
-    lon_right_3857, lat_bottom_3857 = tile_index_to_mercator(x + 1, y + 1, z)
-
-    # 转换为 4326 坐标系下的经纬度范围
-    lon_left, lat_bottom = lonlat_3857_to_4326(lon_left_3857, lat_bottom_3857)
-    lon_right, lat_top = lonlat_3857_to_4326(lon_right_3857, lat_top_3857)
-
-    # print(f"lon_3857: {lon_left_3857}, lat_3857: {lat_bottom_3857} => lon: {lon_left}, lat: {lat_bottom}")
-    # print(f"lon_3857: {lon_right_3857}, lat_3857: {lat_top_3857} => lon: {lon_right}, lat: {lat_top}")
-
-    return lon_left, lat_bottom, lon_right, lat_top
-
-
-def parse_tile_xyz_from_filename(filename):
-    # Remove extension
-    tile_xyz = os.path.splitext(filename)[0]
-    # Split the tile_xyz string into parts
-    parts = tile_xyz.split("_")
-
-    # Print the parts for debugging
-    # print("Parts:", parts)
-
-    # Check if there are three parts (x, y, z)
-    if len(parts) == 3:
-        try:
-            # Attempt to convert x, y, and z to integers
-            x, y, z = map(int, parts)
-            return x, y, z
-        except ValueError:
-            print("Invalid values for x, y, or z in the filename.")
-    else:
-        # Handle the case where the number of parts is not 3
-        print(f"Unexpected number of parts in filename: {len(parts)}. Skipping this file.")
-        return None
-
-
-def batch_convert_single_band_to_rgb(input_folder, output_folder):
-    # 遍历输入文件夹中的所有 PNG 文件
-    for filename in os.listdir(input_folder):
-        if filename.endswith(".png"):
-            png_path = os.path.join(input_folder, filename)
-
-            # 从文件名中解析出 x, y, z 信息
-            tile_xyz = parse_tile_xyz_from_filename(filename)
-
-            # 如果解析成功，则继续处理
-            if tile_xyz is not None:
-                # 构造对应的输出文件路径，将文件后缀改为 .tif
-                tif_path = os.path.join(
-                    output_folder, f"{tile_xyz[0]}_{tile_xyz[1]}_{tile_xyz[2]}.tif"
+    with MemoryFile() as memfile:
+        with memfile.open(**temp_metadata) as dataset:
+            while data := queue.get():
+                x, y, image = data
+                start_col, start_row = (x - xrange[0]) * IMG_SIZE, (y - yrange[0]) * IMG_SIZE
+                dataset.write(
+                    image, window=rio_windows.Window(start_col, start_row, IMG_SIZE, IMG_SIZE)
                 )
-                convert_single_band_to_rgb(png_path, tif_path, tile_xyz)
 
+            out_data = dataset.read(window=window_cut)
+            out_meta = dataset.meta.copy()
+            out_meta.update(
+                {
+                    "height": out_data.shape[1],
+                    "width": out_data.shape[2],
+                    "transform": transform_cut,
+                }
+            )
 
-def merge_tifs(input_folder, output_path, clip_shapefile):
-    # 获取所有.tif文件的路径
-    tif_files = [f for f in os.listdir(input_folder) if f.endswith(".tif")]
-
-    if not tif_files:
-        print("No .tif files found in the input folder.")
-        return
-
-    # 打开所有.tif文件并进行合并
-    src_files_to_merge = [
-        rasterio.open(os.path.join(input_folder, tif_file)) for tif_file in tif_files
-    ]
-
-    # 获取合并后的元数据
-    dest_meta = src_files_to_merge[0].meta.copy()
-
-    # 使用merge函数进行合并
-    merged, out_transform = merge(src_files_to_merge, resampling=Resampling.nearest)
-
-    # 更新元数据
-    dest_meta.update(
-        {
-            "driver": "GTiff",
-            "height": merged.shape[1],
-            "width": merged.shape[2],
-            "transform": out_transform,
-        }
-    )
-
-    # 拼接新的文件名
-    base_name, extension = os.path.splitext(output_path)
-    merged_output_path = f"{base_name}_merged{extension}"
-    # 写入合并后的.tif文件
-    with rasterio.open(merged_output_path, "w", **dest_meta) as dest:
-        dest.write(merged)
-
-    # 关闭打开的文件
-    # for src in src_files_to_merge:
-    # src.close()
-
-    # 打开合并后的.tif文件
-    merged_tif = rasterio.open(merged_output_path)
-
-    # 打开矢量数据集
-    cutline_gdf = gpd.read_file(clip_shapefile)
-
-    # 裁剪栅格数据
-
-    clipped, out_transform_1 = mask(merged_tif, cutline_gdf.geometry, crop=True)
-    print("Merged Shape:", merged.shape)
-    print("Clipped Shape:", clipped.shape)
-    # 更新元数据
-    dest_meta.update(
-        {
-            "driver": "GTiff",
-            "height": clipped.shape[1],
-            "width": clipped.shape[2],
-            "transform": out_transform_1,
-        }
-    )
-
-    # 打印更新后的元数据
-    # print("Updated Metadata:")
-    # print(dest_meta)
-
-    # 写入裁剪后的.tif文件，以 output_path 命名
-    with rasterio.open(output_path, "w", **dest_meta) as dest_1:
-        dest_1.write(clipped)
-
-    # 关闭打开的文件
-    merged_tif.close()
+    with rasterio.open(output_path, "w", **out_meta) as output_image:
+        output_image.write(out_data)
 
 
 def main(output_path, z, token, minx, miny, maxx, maxy):
-    xy = [minx, miny]
-    xxyy = [maxx, maxy]
+    lon_min, lat_min = lonlat_3857_to_4326(minx, miny)
+    lon_max, lat_max = lonlat_3857_to_4326(maxx, maxy)
+    # print(lat_min, lat_max, lon_min, lon_max)
 
-    minxy = mercator_to_tile_index(xy[0], xy[1], z)
-    maxxy = mercator_to_tile_index(xxyy[0], xxyy[1], z)
-    xr = range(minxy[0] - 1, maxxy[0] + 1)
-    yr = range(maxxy[1] - 1, minxy[1] + 1)
-    print(xr, yr)
+    col_min, row_max = latlng_to_tile_coord(lat_min, lon_min, z)
+    col_max, row_min = latlng_to_tile_coord(lat_max, lon_max, z)
+    xr = list(range(col_min - 1, col_max + 1))
+    yr = list(range(row_min - 1, row_max + 1))
+    # print(xr, yr)
 
-    # 找到 tmp_path
-    tmp_path = os.path.dirname(output_path)
+    # print(tile_coord_to_latlng(xr[0], yr[0], z))
+    # print(tile_coord_to_latlng(xr[-1] + 1, yr[-1] + 1, z))
 
-    # 创建 Shapefile
-    shapefile_path = os.path.join(os.path.dirname(output_path), "clip_shapefile.shp")
-    create_polygon_shapefile(shapefile_path, minx, miny, maxx, maxy)
+    queue = Queue(maxsize=32)
 
-    download_pic(xr, yr, z, token, tmp_path)
-    batch_convert_single_band_to_rgb(tmp_path, os.path.dirname(output_path))
-    merge_tifs(os.path.dirname(output_path), output_path, shapefile_path)
+    # 创建生产者进程并传递必要的参数
+    producer_ = Process(
+        target=producer,
+        args=(queue, token, xr, yr, z),
+    )
 
-    print(f"Output Path: {output_path}")
-    print(f"Zoom Level: {z}")
-    print(f"Token: {token}")
-    print(f"Min X: {minx}")
-    print(f"Min Y: {miny}")
-    print(f"Max X: {maxx}")
-    print(f"Max Y: {maxy}")
+    # 创建消费者进程
+    consumer_ = Process(target=consumer, args=(queue, xr, yr, z, output_path))
 
-    # 删除中间生成的 PNG 和 TIFF 文件
-    output_path = os.path.normpath(output_path)
-    for filename in os.listdir(tmp_path):
-        file_path = os.path.join(tmp_path, filename)
-        file_path = os.path.normpath(file_path)  # 规范化路径
-        if file_path != output_path:
-            os.remove(file_path)
+    # 启动进程
+    producer_.start()
+    consumer_.start()
+
+    # 等待所有进程完成
+    producer_.join()
+    consumer_.join()
 
 
 if __name__ == "__main__":
@@ -342,3 +181,4 @@ if __name__ == "__main__":
 
     # 执行主函数
     main(output_path, zoom_level, token, min_x, min_y, max_x, max_y)
+    sys.stdout.write("Done !")
