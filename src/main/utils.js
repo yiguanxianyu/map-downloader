@@ -42,6 +42,11 @@ const isZoomLevelValid = (zoom) => {
   return !(isNaN(zoom) || zoom < 6 || zoom > 18)
 }
 
+const isTokenValid = (token) => {
+  if (token.length != 32) return false
+  return true
+}
+
 const getSaveFilePath = () => {
   return dialog.showSaveDialogSync({
     title: '保存',
@@ -56,9 +61,15 @@ const getSaveFilePath = () => {
 }
 
 const downloadMap = (zoom, extent) => {
+  // check token
+  if (!isTokenValid(configData.dwld_token)) {
+    showNote('error', 'error', 'token格式错误')
+    return
+  }
+
   const prompt_config = {
     title: '缩放等级',
-    label: '请输入缩放等级',
+    label: '请输入缩放等级(6到19之间的整数)',
     type: 'input',
     value: zoom,
     inputAttrs: { type: 'text', required: true },
@@ -71,7 +82,7 @@ const downloadMap = (zoom, extent) => {
         console.log('user cancelled')
       } else {
         zoom = parseInt(r)
-
+        // check zoom
         if (!isZoomLevelValid(zoom)) {
           showNote('error', 'error', '请输入正确的整数')
           return

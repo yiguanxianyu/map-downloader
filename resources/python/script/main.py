@@ -27,7 +27,8 @@ TIANDITU_URL = "https://t4.tianditu.gov.cn/DataServer?T=img_w&x={}&y={}&l={}&tk=
 
 
 def tile_coord_to_latlng(x_tile, y_tile, zoom) -> tuple[float, float]:
-    """Correctly converts tile coordinates to latitude and longitude at a given zoom level."""
+    """Correctly converts tile coordinates to latitude and longitude
+    at a given zoom level (upper left)."""
     n = 2.0**zoom
     lon_deg = x_tile / n * 360.0 - 180.0
     lat_rad = atan(exp((1 - 2 * y_tile / n) * pi)) * 2 - pi / 2
@@ -102,12 +103,15 @@ def consumer(queue, xrange, yrange, zoom_level, output_path, original_coords):
             out_data = dataset.read(window=window_cut)
             out_meta = dataset.meta.copy()
             out_meta.update(
-                {
-                    "height": out_data.shape[1],
-                    "width": out_data.shape[2],
-                    "transform": transform_cut,
-                }
+                dict(
+                    height=out_data.shape[1],
+                    width=out_data.shape[2],
+                    transform=transform_cut,
+                )
             )
+
+    if output_path.exists():
+        output_path.unlink()
 
     with rasterio.open(output_path, "w", **out_meta) as output_image:
         output_image.write(out_data)
@@ -181,9 +185,6 @@ if __name__ == "__main__":
     max_x = args.max_x
     max_y = args.max_y
 
-    if output_path.exists():
-        output_path.unlink()
-
     # 执行主函数
     main(output_path, zoom_level, token, min_x, min_y, max_x, max_y)
-    sys.stdout.write("Done !")
+    sys.stdout.write("下载完成！")
