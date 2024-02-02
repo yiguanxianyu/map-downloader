@@ -1,13 +1,19 @@
 import prompt from 'electron-prompt'
 import { exec } from 'child_process'
-import { reactive, watch } from 'vue'
+import { reactive, watch, toRaw } from 'vue'
 import { app, dialog } from 'electron'
 import { join, resolve } from 'path'
 import fs from 'fs'
 
 const configPath = join(app.getPath('userData'), 'config.json')
 const configData = reactive({
-  dwld_token: null
+  dwld_token: {
+    地质云: 'token1',
+    天地图: 'token2',
+    谷歌地图: 'token3'
+  },
+  last_extent: null,
+  zoom: null
 })
 
 const writeConfig = (configData) => {
@@ -112,22 +118,12 @@ const downloadMap = (zoom, extent) => {
     })
     .catch(console.error)
 }
-
-const setDwldToken = () => {
-  prompt({
-    title: '新的下载API Token',
-    label: '新的下载API Token',
-    type: 'input',
-    value: configData.dwld_token,
-    inputAttrs: { type: 'text', required: true },
-    height: 200
-  }).then((r) => {
-    if (r === null) {
-      console.log('user cancelled')
-    } else {
-      configData.dwld_token = r
-    }
-  })
+const getCurrentToken = () => {
+  return toRaw(configData).dwld_token
 }
 
-export { downloadMap, setDwldToken }
+const updateToken = (token) => {
+  configData.dwld_token = token
+}
+
+export { downloadMap, getCurrentToken, updateToken }

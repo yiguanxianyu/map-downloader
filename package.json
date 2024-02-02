@@ -20,7 +20,10 @@
     "@electron-toolkit/preload": "^3.0.0",
     "@electron-toolkit/utils": "^3.0.0",
     "electron-prompt": "^1.7.0",
-    "ol": "^8.2.0"
+    "element-plus": "^2.5.4",
+    "ol": "^8.2.0",
+    "pinia": "^2.1.7",
+    "sqlite3": "^5.1.7"
   },
   "devDependencies": {
     "@electron-toolkit/eslint-config": "^1.0.2",

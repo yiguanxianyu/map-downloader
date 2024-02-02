@@ -1,13 +1,41 @@
 <template>
   <div id="app">
     <div id="map" />
-    <button id="download_btn" type="button" @click="downloadHandler">下载</button>
-    <button id="change_token_btn" type="button" @click="setDwldToken">设置Token</button>
+
+    <!-- 设置token的界面 -->
+    <el-dialog v-model="tokenDialogFormVisible" title="设置Token">
+      <el-form :model="tokenForm">
+        <el-form-item v-for="(_, key) in tokenForm" :key="key" :label="key" :label-width="formLabelWidth">
+          <el-input v-model="tokenForm[key]"></el-input>
+        </el-form-item>
+      </el-form>
+      <template #footer>
+        <span class="dialog-footer">
+          <el-button @click="tokenDialogFormVisible = false">取消</el-button>
+          <el-button type="primary" @click="updateToken"> 确认 </el-button>
+        </span>
+      </template>
+    </el-dialog>
+    <!-- 设置下载的界面 -->
+    <el-dialog v-model="dialogFormVisible" title="下载地图">
+      <el-select v-model="zoomValue" multiple placeholder="Select" style="width: 100%">
+        <el-option v-for="item in zoomOptions" :key="item.value" :label="item.label" :value="item.value" />
+      </el-select>
+      <template #footer>
+        <span class="dialog-footer">
+          <el-button @click="dialogFormVisible = false">Cancel</el-button>
+          <el-button type="primary" @click="downloadMap">
+            Confirm
+          </el-button>
+        </span>
+      </template>
+    </el-dialog>
+
   </div>
 </template>
 
 <script setup>
-import { onMounted } from 'vue'
+import { onMounted, ref, toRaw } from 'vue'
 import 'ol/ol.css'
 import View from 'ol/View'
 import LayerGroup from 'ol/layer/Group'
@@ -18,44 +46,80 @@ import Zoom from 'ol/control/Zoom'
 import Attribution from 'ol/control/Attribution'
 
 let map = null
-let API_KEY = import.meta.env.RENDERER_VITE_API_KEY.toString()
+const API_KEY = import.meta.env.RENDERER_VITE_API_KEY.toString()
 
-const tiandituTileLayerGroup = new LayerGroup({
-  layers: [
-    new TileLayer({
-      title: '天地图卫星影像',
-      source: new XYZ({
-        url: 'https://t4.tianditu.gov.cn/DataServer?T=img_w&x={x}&y={y}&l={z}&tk=' + API_KEY,
-        attributions: ['Map data &copy; <a href="https://www.tianditu.gov.cn/">天地图</a>']
-      })
-    }),
-    new TileLayer({
-      title: '标注图层',
-      source: new XYZ({
-        url: 'https://t4.tianditu.gov.cn/DataServer?T=cia_w&x={x}&y={y}&l={z}&tk=' + API_KEY
-      })
-    })
-  ]
+const getCurrentZoom = () => {
+  return Math.round(map.getView().values_.zoom)
+}
+
+const getCurrentExtent = () => {
+  return map.getView().calculateExtent(map.getSize())
+}
+
+// token设置部分
+const tokenDialogFormVisible = ref(false)
+const formLabelWidth = '140px'
+
+const tokenForm = ref({})
+
+window.electronAPI.onUpdateToken((currentToken) => {
+  tokenForm.value = currentToken
+  tokenDialogFormVisible.value = true
 })
 
-const downloadHandler = () => {
-  const view = map.getView()
-  const currentZoom = Math.round(view.values_.zoom)
-  const currentExtent = view.calculateExtent(map.getSize())
-  window.electronAPI.downloadMap(currentZoom, currentExtent)
+const updateToken = () => {
+  window.electronAPI.updateToken(toRaw(tokenForm.value))
+  tokenDialogFormVisible.value = false
 }
+// token设置部分
 
-const setDwldToken = () => {
-  window.electronAPI.setDwldToken()
+// 下载部分
+const dialogFormVisible = ref(false)
+
+const zoomValue = ref([])
+
+const zoomOptions = Array.from({ length: 19 - 6 + 1 }, (_, index) => ({
+  value: index + 6,
+  label: index + 6
+}));
+
+window.electronAPI.onDownloadMap(() => {
+  zoomValue.value = [getCurrentZoom()]
+  dialogFormVisible.value = true
+})
+
+const downloadMap = () => {
+  const extent = getCurrentExtent()
+  zoomValue.value.forEach(zoom => {
+    window.electronAPI.downloadMap(extent, zoom)
+  })
+  dialogFormVisible.value = false
 }
+// 下载部分
 
 onMounted(() => {
   map = new Map({
     target: 'map',
-    layers: tiandituTileLayerGroup,
+    layers: new LayerGroup({
+      layers: [
+        new TileLayer({
+          title: '天地图卫星影像',
+          source: new XYZ({
+            url: 'https://t4.tianditu.gov.cn/DataServer?T=img_w&x={x}&y={y}&l={z}&tk=' + API_KEY,
+            attributions: ['Map data &copy; <a href="https://www.tianditu.gov.cn/">天地图</a>']
+          })
+        }),
+        new TileLayer({
+          title: '天地图影像标注',
+          source: new XYZ({
+            url: 'https://t4.tianditu.gov.cn/DataServer?T=cia_w&x={x}&y={y}&l={z}&tk=' + API_KEY
+          })
+        })
+      ]
+    }),
     view: new View({
       center: [12946790, 4864489],
-      zoom: 12,
+      zoom: 6,
       maxZoom: 18
     }),
     controls: [new Zoom(), new Attribution()]

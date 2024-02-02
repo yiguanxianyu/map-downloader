@@ -26,7 +26,7 @@ IMG_SIZE = 256
 TIANDITU_URL = "https://t4.tianditu.gov.cn/DataServer?T=img_w&x={}&y={}&l={}&tk={}"
 
 
-def tile_coord_to_latlng(x_tile, y_tile, zoom) -> tuple[float, float]:
+def tile_coord_to_latlng(x_tile: int, y_tile: int, zoom: int) -> tuple[float, float]:
     """Correctly converts tile coordinates to latitude and longitude
     at a given zoom level (upper left)."""
     n = 2.0**zoom
@@ -36,7 +36,7 @@ def tile_coord_to_latlng(x_tile, y_tile, zoom) -> tuple[float, float]:
     return lon_deg, lat_deg
 
 
-def latlng_to_tile_coord(lat, lng, zoom):
+def latlng_to_tile_coord(lat: float, lng: float, zoom: int) -> tuple[float, float]:
     """Converts latitude and longitude to tile coordinates at a given zoom level."""
     lat_rad = lat * pi / 180
     n = 2.0**zoom
@@ -45,7 +45,7 @@ def latlng_to_tile_coord(lat, lng, zoom):
     return xtile, ytile
 
 
-def lonlat_3857_to_4326(x, y):
+def lonlat_3857_to_4326(x: float, y: float) -> tuple[float, float]:
     """Converts EPSG:3857 to latitude and longitude."""
     longitude = x / MERCATOR_CONSTANT * 180
     latitude = atan(exp(y / MERCATOR_CONSTANT * pi)) * 360 / pi - 90

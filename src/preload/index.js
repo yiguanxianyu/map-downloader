@@ -20,6 +20,9 @@ if (process.contextIsolated) {
 }
 
 contextBridge.exposeInMainWorld('electronAPI', {
-  downloadMap: (zoom, extent) => ipcRenderer.send('downloadMap', zoom, extent),
-  setDwldToken: () => ipcRenderer.send('setDwldToken')
+  sendDwldArgs: (zoom, extent) => ipcRenderer.send('download-map', zoom, extent),
+  updateToken: (token) => ipcRenderer.send('update-token', token),
+  onUpdateToken: (callback) => ipcRenderer.on('on-update-token', (_event, value) => callback(value)),
+  downloadMapx: (extent, zoom) => ipcRenderer.send('download-map', extent, zoom),
+  onDownloadMap: (callback) => ipcRenderer.on('on-download-map', (_event, value) => callback(value)),
 })
