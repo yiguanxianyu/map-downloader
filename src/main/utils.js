@@ -1,8 +1,8 @@
-import prompt from 'electron-prompt'
 import { exec } from 'child_process'
 import { reactive, watch, toRaw } from 'vue'
 import { app, dialog } from 'electron'
 import { join, resolve } from 'path'
+import store from './store'
 import fs from 'fs'
 
 const configPath = join(app.getPath('userData'), 'config.json')
@@ -67,63 +67,43 @@ const getSaveFilePath = () => {
 }
 
 const downloadMap = (zoom, extent) => {
-  // check token
-  if (!isTokenValid(configData.dwld_token)) {
-    showNote('error', 'error', 'token格式错误')
+  zoom = parseInt(r)
+  // check zoom
+  if (!isZoomLevelValid(zoom)) {
+    showNote('error', 'error', '请输入正确的整数')
     return
   }
 
-  const prompt_config = {
-    title: '缩放等级',
-    label: '请输入缩放等级(6到19之间的整数)',
-    type: 'input',
-    value: zoom,
-    inputAttrs: { type: 'text', required: true },
-    height: 200
-  }
+  const output_path = getSaveFilePath()
+  if (!output_path) return
 
-  prompt(prompt_config)
-    .then((r) => {
-      if (r === null) {
-        console.log('user cancelled')
-      } else {
-        zoom = parseInt(r)
-        // check zoom
-        if (!isZoomLevelValid(zoom)) {
-          showNote('error', 'error', '请输入正确的整数')
-          return
-        }
+  const full_command = [
+    resolve(import.meta.env.MAIN_VITE_PYTHON_ACTIVATE_PATH),
+    resolve(import.meta.env.MAIN_VITE_PYTHON_SCRIPT_PATH),
+    output_path,
+    zoom,
+    configData.dwld_token,
+    extent[0],
+    extent[1],
+    extent[2],
+    extent[3]
+  ].join(' ')
 
-        const output_path = getSaveFilePath()
-        if (!output_path) return
-
-        const full_command = [
-          resolve(import.meta.env.MAIN_VITE_PYTHON_ACTIVATE_PATH),
-          resolve(import.meta.env.MAIN_VITE_PYTHON_SCRIPT_PATH),
-          output_path,
-          zoom,
-          configData.dwld_token,
-          extent[0],
-          extent[1],
-          extent[2],
-          extent[3]
-        ].join(' ')
-
-        exec(full_command, (error, stdout, stderr) => {
-          if (error) showNote('error', 'error', error)
-          else if (stderr) showNote('error', 'stderr', stderr)
-          else showNote('info', 'stdout', stdout)
-        })
-      }
-    })
-    .catch(console.error)
+  exec(full_command, (error, stdout, stderr) => {
+    if (error) showNote('error', 'error', error)
+    else if (stderr) showNote('error', 'stderr', stderr)
+    else showNote('info', 'stdout', stdout)
+  })
 }
 const getCurrentToken = () => {
-  return toRaw(configData).dwld_token
+  // return toRaw(configData).dwld_token
+  console.log(store.get('map_rules'))
+  return store.get('map_rules')
 }
 
 const updateToken = (token) => {
-  configData.dwld_token = token
+  // configData.dwld_token = token
+  store.set('map_rules', token)
 }
 
 export { downloadMap, getCurrentToken, updateToken }
