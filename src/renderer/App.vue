@@ -115,26 +115,26 @@ import { onMounted, ref, toRaw } from 'vue'
 
 import { generateLayer, tiandituLayer } from './Map'
 
-const store = window.electronAPI.store
-const multipleTableRef = ref()
+const store = window.electronAPI.store // 全局存储
 
-const mapInfoForm = ref({})
-const mapTableData = ref(store.get('map_rules'))
+const multipleTableRef = ref() //表格的引用
+const mapTableData = ref(store.get('map_rules')) // 地图列表
 
-const dialogConfigVisible = ref(false)
-const dialogDownloadMapVisible = ref(false)
+const mapInfoForm = ref({}) // 编辑地图信息
+const dialogConfigVisible = ref(false) // 展示编辑地图信息的dialog
 
-const zoomOptions = ref([])
+const extentVec = new VectorSource({ wrapX: false }) // 存储范围的矢量图层
+const customLayer = new Collection([]) // 当前显示的图层
 
-// Get zoom for current view
+const dialogDownloadMapVisible = ref(false) // 展示下载地图的dialog
+const zoomOptions = ref([]) // 下载地图界面的缩放选项
+
 const getCurrentZoom = () => {
   return Math.round(map.getView().values_.zoom)
 }
-// Get extent for current view
 const getCurrentViewExtent = () => {
   return map.getView().calculateExtent(map.getSize())
 }
-
 const getCurrentSelectExtent = () => {
   return extentVec.getExtent()
 }
@@ -210,8 +210,6 @@ const handleEdit = (item) => {
 }
 
 //地图部分
-const customLayer = new Collection([])
-const extentVec = new VectorSource({ wrapX: false })
 
 // 创建交互绘制对象
 const draw = new Draw({
@@ -243,6 +241,7 @@ window.electronAPI.extent.clearExtent(() => {
   extentVec.clear()
 })
 
+//初始化地图
 const map = new Map({
   layers: [tiandituLayer, new LayerGroup({ layers: customLayer }), new VectorLayer({ source: extentVec })],
   view: new View({

@@ -3,7 +3,7 @@ import { BrowserWindow, Menu, ipcMain, shell } from 'electron'
 import { join } from 'path'
 
 import icon from '../../resources/icon.png?asset'
-import { downloadMap } from './downloadMap'
+import { downloadMap } from './DownloadMap'
 
 let mainWindow
 
