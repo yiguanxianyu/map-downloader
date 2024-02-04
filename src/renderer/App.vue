@@ -45,7 +45,7 @@
       <template #footer>
         <span class="dialog-footer">
           <el-button @click="dialogDownloadMapVisible = false">取消</el-button>
-          <el-button type="primary" @click="downloadMap"> 确认 </el-button>
+          <el-button type="primary" @click="handleDownloadMap"> 确认 </el-button>
         </span>
       </template>
     </el-dialog>
@@ -174,7 +174,7 @@ window.electronAPI.onDownloadMap(() => {
   dialogDownloadMapVisible.value = true
 })
 
-const downloadMap = () => {
+const handleDownloadMap = () => {
   const extent = getCurrentSelectExtent()
   const selectedRows = multipleTableRef.value?.getSelectionRows()
   const configs = []
@@ -200,13 +200,8 @@ const handleLayerSelectChange = (newItem, _oldItem) => {
 }
 //编辑图层信息
 const handleEdit = (item) => {
-  for (let i of mapTableData.value) {
-    if (i.id === item.id) {
-      mapInfoForm.value = i
-    }
-  }
+  mapInfoForm.value = item
   dialogConfigVisible.value = true
-  console.log(item)
 }
 
 //地图部分

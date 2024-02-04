@@ -10,7 +10,7 @@ const config = {
       label: '谷歌',
       type: 'XYZ',
       token_browser: 'token1',
-      token_server: 'token2',
+      token_server: '',
       min_zoom: 0,
       max_zoom: 14,
       projection: 'EPSG:4326'
@@ -23,7 +23,7 @@ const config = {
       type: 'WMTS',
       token_browser:
         'eyJhbGciOiJIUzI1NiJ9.eyJhdWQiOiJjYmE2Zjc4ZC1hNTExLTRmOTYtYTY3Yi1lMzA3MDZmNDY0ZDgifQ.pECeSVzA9d0NGLs_twUO8Z7zeVMr3srXPkmJHxn9o5Y',
-      token_server: 'token2',
+      token_server: '',
       min_zoom: 0,
       max_zoom: 14,
       projection: 'EPSG:4326',
@@ -38,12 +38,55 @@ const config = {
       type: 'WMTS',
       token_browser:
         'eyJhbGciOiJIUzI1NiJ9.eyJhdWQiOiJjYmE2Zjc4ZC1hNTExLTRmOTYtYTY3Yi1lMzA3MDZmNDY0ZDgifQ.pECeSVzA9d0NGLs_twUO8Z7zeVMr3srXPkmJHxn9o5Y',
-      token_server: 'token2',
+      token_server: '',
       min_zoom: 0,
       max_zoom: 13,
       projection: 'EPSG:4326',
       layer: 'qg50w_20210416_F7qGy9A7',
       matrixSet: 'EPSG:4326_qg50w_20210416_F7qGy9A7_028mm_GB'
+    },
+    {
+      url: 'https://igss.cgs.gov.cn:6160/igs/rest/ogc/全国100万地质图_20210330_rpam5kdJ/WMTSServer?tk=',
+      provider: 'GeoCloud',
+      id: '4',
+      label: '全国1:100万地质图-地质云',
+      type: 'WMTS',
+      token_browser:
+        'eyJhbGciOiJIUzI1NiJ9.eyJhdWQiOiJjYmE2Zjc4ZC1hNTExLTRmOTYtYTY3Yi1lMzA3MDZmNDY0ZDgifQ.pECeSVzA9d0NGLs_twUO8Z7zeVMr3srXPkmJHxn9o5Y',
+      token_server: '',
+      min_zoom: 0,
+      max_zoom: 11,
+      projection: 'EPSG:4326',
+      layer: '全国100万地质图_20210330_rpam5kdJ',
+      matrixSet: 'EPSG:4326_全国100万地质图_20210330_rpam5kdJ_028mm_GB'
+    },
+    {
+      url: 'https://igss.cgs.gov.cn:6160/igs/rest/ogc/qg150w_20210416_BIwqE0wU/WMTSServer?tk=',
+      provider: 'GeoCloud',
+      id: '5',
+      label: '全国1:150万地质图-地质云',
+      type: 'WMTS',
+      token_browser: '',
+      token_server: '',
+      min_zoom: 0,
+      max_zoom: 14,
+      projection: 'EPSG:4326',
+      layer: 'qg150w_20210416_BIwqE0wU',
+      matrixSet: 'EPSG:4326_qg150w_20210416_BIwqE0wU_028mm_GB'
+    },
+    {
+      url: 'https://igss.cgs.gov.cn:6160/igs/rest/ogc/qg250w_20210416_ZAZSeOGX/WMTSServer?tk=',
+      provider: 'GeoCloud',
+      id: '6',
+      label: '全国1:250万地质图-地质云',
+      type: 'WMTS',
+      token_browser: '',
+      token_server: '',
+      min_zoom: 0,
+      max_zoom: 14,
+      projection: 'EPSG:4326',
+      layer: 'qg250w_20210416_ZAZSeOGX',
+      matrixSet: 'EPSG:4326_qg250w_20210416_ZAZSeOGX_028mm_GB'
     }
   ]
 }
@@ -55,8 +98,7 @@ const schema = {
       type: 'object',
       properties: {
         url: {
-          type: 'string',
-          format: 'uri'
+          type: 'string'
         },
         provider: {
           type: 'string'
@@ -77,12 +119,11 @@ const schema = {
           type: 'string'
         },
         min_zoom: {
-          type: 'number',
+          type: 'integer',
           minimum: 0
         },
         max_zoom: {
-          type: 'number',
-          maximum: 18
+          type: 'integer'
         },
         projection: {
           type: 'string'
