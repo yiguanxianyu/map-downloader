@@ -1,5 +1,5 @@
-import { contextBridge, ipcRenderer } from 'electron'
 import { electronAPI } from '@electron-toolkit/preload'
+import { contextBridge, ipcRenderer } from 'electron'
 
 // Custom APIs for renderer
 const api = {}
@@ -22,8 +22,8 @@ if (process.contextIsolated) {
 contextBridge.exposeInMainWorld('electronAPI', {
   sendDwldArgs: (zoom, extent) => ipcRenderer.send('download-map', zoom, extent),
   updateToken: (token) => ipcRenderer.send('update-token', token),
-  onUpdateToken: (callback) =>
-    ipcRenderer.on('on-update-token', (_event, value) => callback(value)),
+  onUpdateToken: (callback) => ipcRenderer.on('on-update-token', (_event) => callback()),
+
   downloadMapx: (extent, zoom) => ipcRenderer.send('download-map', extent, zoom),
   onDownloadMap: (callback) =>
     ipcRenderer.on('on-download-map', (_event, value) => callback(value)),
@@ -35,5 +35,11 @@ contextBridge.exposeInMainWorld('electronAPI', {
       const resp = ipcRenderer.sendSync('getStore', key)
       return resp
     }
+  },
+  extent: {
+    setCurrentViewAsExtent: (callback) =>
+      ipcRenderer.on('set-extent-current-view', (_event) => callback()),
+    drawRectangleAsExtent: (callback) =>
+      ipcRenderer.on('set-extent-draw-rectangle', (_event) => callback())
   }
 })

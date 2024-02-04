@@ -1,5 +1,6 @@
-import Store from 'electron-store'
 import { ipcMain } from 'electron'
+import Store from 'electron-store'
+
 const config = {
   map_rules: [
     {
@@ -18,7 +19,7 @@ const config = {
       url: 'https://igss.cgs.gov.cn:6160/igs/rest/ogc/qg20_20210401_FCnDDRJd/WMTSServer?tk=',
       provider: 'GeoCloud',
       id: '2',
-      label: '地质云-全国1:20万地质图空间数据库',
+      label: '全国1:20万地质图-地质云',
       type: 'WMTS',
       token_browser:
         'eyJhbGciOiJIUzI1NiJ9.eyJhdWQiOiJjYmE2Zjc4ZC1hNTExLTRmOTYtYTY3Yi1lMzA3MDZmNDY0ZDgifQ.pECeSVzA9d0NGLs_twUO8Z7zeVMr3srXPkmJHxn9o5Y',
@@ -28,6 +29,21 @@ const config = {
       projection: 'EPSG:4326',
       layer: 'qg20_20210401_FCnDDRJd',
       matrixSet: 'EPSG:4326_qg20_20210401_FCnDDRJd_028mm_GB'
+    },
+    {
+      url: 'https://igss.cgs.gov.cn:6160/igs/rest/ogc/qg50w_20210416_F7qGy9A7/WMTSServer?tk=',
+      provider: 'GeoCloud',
+      id: '3',
+      label: '全国1:50万地质图-地质云',
+      type: 'WMTS',
+      token_browser:
+        'eyJhbGciOiJIUzI1NiJ9.eyJhdWQiOiJjYmE2Zjc4ZC1hNTExLTRmOTYtYTY3Yi1lMzA3MDZmNDY0ZDgifQ.pECeSVzA9d0NGLs_twUO8Z7zeVMr3srXPkmJHxn9o5Y',
+      token_server: 'token2',
+      min_zoom: 0,
+      max_zoom: 13,
+      projection: 'EPSG:4326',
+      layer: 'qg50w_20210416_F7qGy9A7',
+      matrixSet: 'EPSG:4326_qg50w_20210416_F7qGy9A7_028mm_GB'
     }
   ]
 }
@@ -93,9 +109,14 @@ const store = new Store({ schema })
 // console.log('clear', electronStore.clear()) // 清除所有store数据
 // console.log('has', electronStore.has()) // 检测是否存在某条数据
 
+// if (!store.get('first')) {
+//   // 第一次打开软件时，初始化数据
+//   store.set('map_rules', config.map_rules)
+//   store.set('first', true)
+// }
 store.set('map_rules', config.map_rules)
 
-// 定义ipcRenderer监听事件
+// 定义ipc监听事件
 ipcMain.on('setStore', (_, key, value) => {
   store.set(key, value)
 })

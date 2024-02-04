@@ -1,9 +1,10 @@
 import { exec } from 'child_process'
-import { reactive, watch, toRaw } from 'vue'
 import { app, dialog } from 'electron'
-import { join, resolve } from 'path'
-import store from './store'
 import fs from 'fs'
+import { join, resolve } from 'path'
+import { reactive, toRaw, watch } from 'vue'
+
+import store from './store'
 
 const configPath = join(app.getPath('userData'), 'config.json')
 const configData = reactive({
@@ -97,7 +98,6 @@ const downloadMap = (zoom, extent) => {
 }
 const getCurrentToken = () => {
   // return toRaw(configData).dwld_token
-  console.log(store.get('map_rules'))
   return store.get('map_rules')
 }
 

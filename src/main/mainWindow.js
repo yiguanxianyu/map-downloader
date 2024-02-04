@@ -1,6 +1,7 @@
-import { shell, BrowserWindow, Menu, ipcMain } from 'electron'
-import { join } from 'path'
 import { is } from '@electron-toolkit/utils'
+import { BrowserWindow, Menu, ipcMain, shell } from 'electron'
+import { join } from 'path'
+
 import icon from '../../resources/icon.png?asset'
 import { getCurrentToken, updateToken } from './utils'
 
@@ -12,8 +13,8 @@ const createWindow = () => {
 
   // Create the browser window.
   const mw = new BrowserWindow({
-    width: 800,
-    height: 600,
+    width: 1200,
+    height: 800,
     show: false,
     autoHideMenuBar: false,
     ...(process.platform === 'linux' ? { icon } : {}),
@@ -62,7 +63,7 @@ const menuTemplate = [
   {
     label: 'token设置',
     click: () => {
-      mainWindow.webContents.send('on-update-token', getCurrentToken())
+      mainWindow.webContents.send('on-update-token')
     }
   },
   {
@@ -71,14 +72,17 @@ const menuTemplate = [
       {
         label: '将当前范围设置为下载范围',
         click: () => {
-          mainWindow.webContents.send('request-extent')
+          mainWindow.webContents.send('set-extent-current-view')
         }
       },
       {
         label: '从shp读取范围'
       },
       {
-        label: '手动输入范围'
+        label: '在地图上勾选范围',
+        click: () => {
+          mainWindow.webContents.send('set-extent-draw-rectangle')
+        }
       }
     ]
   }

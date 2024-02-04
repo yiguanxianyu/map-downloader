@@ -1,6 +1,32 @@
 <template>
   <div id="app">
-    <div id="map" />
+    <div id="container">
+      <div id="sidebar">
+        <el-table
+          ref="multipleTableRef"
+          :data="tableData"
+          style="width: 100%"
+          size="small"
+          highlight-current-row
+          @current-change="handleLayerSelectChange"
+          height="90vh"
+        >
+          <el-table-column type="selection" width="30px" fixed="left" />
+          <el-table-column label="label" show-overflow-tooltip>
+            <template #default="scope">{{ scope.row.label }}</template>
+          </el-table-column>
+          <el-table-column fixed="right" label="操作" width="50px">
+            <template #default>
+              <el-button link type="primary" size="small" @click="handleEdit">Edit</el-button>
+            </template>
+          </el-table-column>
+        </el-table>
+        <div style="margin-bottom: 20px">
+          <el-button @click="toggleSelection()">Add</el-button>
+        </div>
+      </div>
+      <div id="map" />
+    </div>
 
     <!-- 设置token的界面 -->
     <el-dialog v-model="tokenDialogFormVisible" title="设置Token" style="width: 80%">
@@ -48,48 +74,47 @@
 </template>
 
 <script setup>
-import { onMounted, ref, toRaw } from 'vue'
-import 'ol/ol.css'
-import View from 'ol/View'
-import LayerGroup from 'ol/layer/Group'
+import { Feature } from 'ol'
+import Collection from 'ol/Collection.js'
 import Map from 'ol/Map'
-import TileLayer from 'ol/layer/Tile'
-import XYZ from 'ol/source/XYZ'
-import Zoom from 'ol/control/Zoom'
+import View from 'ol/View'
 import Attribution from 'ol/control/Attribution'
-import { get as getProjection } from 'ol/proj'
-import { getTopLeft, getWidth } from 'ol/extent'
-import WMTS from 'ol/source/WMTS'
-import WMTSTileGrid from 'ol/tilegrid/WMTS'
+import Zoom from 'ol/control/Zoom'
+import { fromExtent } from 'ol/geom/Polygon'
+import Draw, { createBox } from 'ol/interaction/Draw'
+import LayerGroup from 'ol/layer/Group'
+import VectorLayer from 'ol/layer/Vector'
+import 'ol/ol.css'
+import { transformExtent } from 'ol/proj'
+import VectorSource from 'ol/source/Vector'
+import { onMounted, ref, toRaw } from 'vue'
 
-let map = null
-const API_KEY = import.meta.env.RENDERER_VITE_API_KEY.toString()
+import { generateLayer, tiandituLayer } from './Map'
 
+const store = window.electronAPI.store
+
+const tableData = store.get('map_rules')
+
+// Get zoom for current view
 const getCurrentZoom = () => {
   return Math.round(map.getView().values_.zoom)
 }
-
-const getCurrentExtent = () => {
+// Get extent for current view
+const getCurrentMapExtent = () => {
   return map.getView().calculateExtent(map.getSize())
 }
 
-// token设置部分
-const tokenDialogFormVisible = ref(false)
+const getCurrentSelectExtent = () => {
+  return extentVec.getExtent()
+}
 
+// Set token
+const tokenDialogFormVisible = ref(false)
 const tokenForm = ref({})
 
-window.electronAPI.onUpdateToken((currentToken) => {
-  // const _currToken = []
-  // for (var i = 0; i < currentToken.length; i++) {
-  //   const obj = currentToken[i]
-  //   _currToken.push({
-  //     id: obj.id,
-  //     token: obj.token_browser,
-  //   })
-  // }
-  // tokenForm.value = _currToken
-
-  tokenForm.value = currentToken
+// Callback for event onUpdateToken
+window.electronAPI.onUpdateToken(() => {
+  tokenForm.value = store.get('map_rules')
   tokenDialogFormVisible.value = true
 })
 
@@ -101,7 +126,6 @@ const updateToken = () => {
 
 // 下载部分
 const dialogFormVisible = ref(false)
-
 const zoomValue = ref([])
 
 const zoomOptions = Array.from({ length: 19 }, (_, index) => ({
@@ -115,119 +139,103 @@ window.electronAPI.onDownloadMap(() => {
 })
 
 const downloadMap = () => {
-  const extent = getCurrentExtent()
+  const extent = getCurrentMapExtent()
   zoomValue.value.forEach((zoom) => {
     window.electronAPI.downloadMap(extent, zoom)
   })
   dialogFormVisible.value = false
 }
 
-// 下载部分
+//地图部分
+const customLayer = new Collection([])
+const extentVec = new VectorSource({ wrapX: false })
 
-//根据给定的配置生成一个WMTS图层
-const generateWMTSLayer = (mapConfig) => {
-  const projection = getProjection(mapConfig.projection)
-  const projectionExtent = projection.getExtent()
-  const size = getWidth(projectionExtent) / 256
+// 创建交互绘制对象
+const draw = new Draw({
+  source: extentVec,
+  type: 'Circle',
+  geometryFunction: createBox()
+})
 
-  const resolutions = []
-  const matrixIds = []
-  for (let i = mapConfig.min_zoom; i <= mapConfig.max_zoom; i++) {
-    resolutions.push(size / Math.pow(2, i + 1))
-    matrixIds.push(i)
-  }
+// 监听绘制结束事件,绘制完成后关闭绘制功能
+draw.on('drawend', (event) => {
+  draw.setActive(false)
+})
 
-  return new TileLayer({
-    title: mapConfig.label,
-    source: new WMTS({
-      url: mapConfig.url + mapConfig.token_browser,
-      layer: mapConfig.layer,
-      matrixSet: mapConfig.matrixSet,
-      projection: projection,
-      format: 'image/png',
-      tileGrid: new WMTSTileGrid({
-        origin: getTopLeft(projectionExtent), //原点(左上角)
-        resolutions: resolutions, //分辨率数组
-        matrixIds: matrixIds //矩阵标识列表，与地图级数保持一致
-      })
-    })
+// 将当前地图视角设为polygon
+window.electronAPI.extent.setCurrentViewAsExtent(() => {
+  const polygonFeature = new Feature({
+    geometry: fromExtent(getCurrentMapExtent())
   })
-}
-// 根据给定的配置生成一个XYZ图层
-const generateXYZLayer = (mapConfig) => {
-  return new TileLayer({
-    title: mapConfig.label,
-    source: new XYZ({
-      url: mapConfig.url + mapConfig.token_browser
-    })
-  })
-}
-//根据给定的配置，判断生成什么图层
-const generateLayer = (mapConfig) => {
-  if (mapConfig.type === 'WMTS') {
-    return generateWMTSLayer(mapConfig)
-  } else if (mapConfig.type === 'XYZ') {
-    return generateXYZLayer(mapConfig)
+  extentVec.clear()
+  extentVec.addFeature(polygonFeature)
+})
+
+window.electronAPI.extent.drawRectangleAsExtent(() => {
+  draw.setActive(true)
+  extentVec.clear()
+})
+
+const map = new Map({
+  layers: [
+    tiandituLayer,
+    new LayerGroup({ layers: customLayer }),
+    new VectorLayer({ source: extentVec })
+  ],
+  view: new View({
+    center: [12000000, 5000000],
+    zoom: 3,
+    maxZoom: 18,
+    extent: transformExtent([60, 0, 150, 60], 'EPSG:4326', 'EPSG:3857')
+  }),
+  controls: [new Zoom(), new Attribution()]
+})
+
+const handleLayerSelectChange = (newItem, _oldItem) => {
+  if (newItem) {
+    customLayer.clear()
+    customLayer.push(generateLayer(newItem))
   }
 }
+
+const handleEdit = (item) => {
+  console.log(item)
+}
+//地图部分
 
 onMounted(() => {
-  const WMTSLayer = generateLayer(window.electronAPI.store.get('map_rules')[1])
-
-  map = new Map({
-    target: 'map',
-    layers: new LayerGroup({
-      layers: [
-        new TileLayer({
-          title: '天地图卫星影像',
-          source: new XYZ({
-            url: 'https://t4.tianditu.gov.cn/DataServer?T=img_w&x={x}&y={y}&l={z}&tk=' + API_KEY,
-            attributions: ['Map data &copy; <a href="https://www.tianditu.gov.cn/">天地图</a>']
-          })
-        }),
-        WMTSLayer
-      ]
-    }),
-    view: new View({
-      center: [12946790, 4864489],
-      zoom: 6,
-      maxZoom: 18
-    }),
-    controls: [new Zoom(), new Attribution()]
-  })
-  console.log(map.getLayers())
+  map.setTarget('map')
+  draw.setActive(false)
+  map.addInteraction(draw)
 })
 </script>
 
 <style scoped>
 #app {
+  position: absolute;
+  height: 100%;
+  width: 100%;
+}
+
+#container {
+  display: flex;
+  height: 100%;
+}
+
+#sidebar {
+  width: 270px;
   position: relative;
-  height: 100vh;
-  width: 100vw;
+  height: 100%;
 }
 
 #map {
+  flex: 1;
+  position: relative;
   height: 100%;
   width: 100%;
   --ol-background-color: rgba(33, 33, 33, 0.95);
   --ol-subtle-foreground-color: #ffffff;
   --ol-partial-background-color: #f0f0f0;
-}
-
-#download_btn {
-  position: absolute;
-  top: 5px;
-  right: 5px;
-  height: 2.5em;
-  width: 4em;
-}
-
-#change_token_btn {
-  position: absolute;
-  top: 3.5em;
-  right: 5px;
-  height: 4em;
-  width: 4em;
 }
 
 :deep(.ol-zoom) {
