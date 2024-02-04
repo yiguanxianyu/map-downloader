@@ -4,69 +4,92 @@
       <div id="sidebar">
         <el-table
           ref="multipleTableRef"
-          :data="tableData"
+          :data="mapTableData"
           style="width: 100%"
           size="small"
           highlight-current-row
           @current-change="handleLayerSelectChange"
-          height="90vh"
+          height="95vh"
         >
-          <el-table-column type="selection" width="30px" fixed="left" />
-          <el-table-column label="label" show-overflow-tooltip>
+          <el-table-column label="图层" show-overflow-tooltip>
             <template #default="scope">{{ scope.row.label }}</template>
           </el-table-column>
-          <el-table-column fixed="right" label="操作" width="50px">
-            <template #default>
-              <el-button link type="primary" size="small" @click="handleEdit">Edit</el-button>
+          <el-table-column type="selection" width="25px" fixed="right" />
+          <el-table-column fixed="right" label="操作" width="60px">
+            <template #default="scope">
+              <el-button type="primary" size="small" @click="handleEdit(scope.row)">编辑</el-button>
             </template>
           </el-table-column>
         </el-table>
         <div style="margin-bottom: 20px">
-          <el-button @click="toggleSelection()">Add</el-button>
+          <el-button @click="">Add</el-button>
         </div>
       </div>
       <div id="map" />
     </div>
 
-    <!-- 设置token的界面 -->
-    <el-dialog v-model="tokenDialogFormVisible" title="设置Token" style="width: 80%">
-      <el-form :model="tokenForm">
-        <el-form-item
-          v-for="item in tokenForm"
-          :label="item.label + '(浏览器端)'"
-          label-width="60%"
-        >
-          <el-input v-model="item.token_browser"></el-input>
-        </el-form-item>
-        <el-form-item
-          v-for="item in tokenForm"
-          :label="item.label + '(服务器端)'"
-          label-width="60%"
-        >
-          <el-input v-model="item.token_server"></el-input>
+    <!-- 设置下载的界面 -->
+    <el-dialog v-model="dialogDownloadMapVisible" title="下载地图">
+      <el-form label-position="top" label-width="100px" :model="zoomOptions">
+        <el-form-item v-for="item in zoomOptions" :label="item.label" style="width: 100%">
+          <el-select v-model="item.selectedZoom" multiple>
+            <el-option
+              v-for="i in item.maxZoom - item.minZoom + 1"
+              :key="i"
+              :label="i + item.minZoom - 1"
+              :value="i + item.minZoom - 1"
+            />
+          </el-select>
         </el-form-item>
       </el-form>
       <template #footer>
         <span class="dialog-footer">
-          <el-button @click="tokenDialogFormVisible = false">取消</el-button>
-          <el-button type="primary" @click="updateToken"> 确认 </el-button>
+          <el-button @click="dialogDownloadMapVisible = false">取消</el-button>
+          <el-button type="primary" @click="downloadMap"> 确认 </el-button>
         </span>
       </template>
     </el-dialog>
-    <!-- 设置下载的界面 -->
-    <el-dialog v-model="dialogFormVisible" title="下载地图">
-      <el-select v-model="zoomValue" multiple placeholder="Select" style="width: 100%">
-        <el-option
-          v-for="item in zoomOptions"
-          :key="item.value"
-          :label="item.label"
-          :value="item.value"
-        />
-      </el-select>
+    <!-- 编辑地图配置的界面 -->
+    <el-dialog v-model="dialogConfigVisible" title="配置地图">
+      <el-form :model="mapInfoForm" label-width="120px">
+        <el-form-item label="地图名">
+          <el-input v-model="mapInfoForm.label" />
+        </el-form-item>
+        <el-form-item label="URL">
+          <el-input v-model="mapInfoForm.url" />
+        </el-form-item>
+        <el-form-item label="浏览器端token">
+          <el-input v-model="mapInfoForm.token_browser" />
+        </el-form-item>
+        <el-form-item label="服务器端token">
+          <el-input v-model="mapInfoForm.token_server" />
+        </el-form-item>
+        <el-form-item label="服务提供商">
+          <el-input v-model="mapInfoForm.provider" />
+        </el-form-item>
+        <el-form-item label="瓦片类型">
+          <el-select v-model="mapInfoForm.type" placeholder="瓦片类型">
+            <el-option label="WMTS" value="WMTS" />
+            <el-option label="XYZ" value="XYZ" />
+          </el-select>
+        </el-form-item>
+        <el-form-item label="投影">
+          <el-select v-model="mapInfoForm.projection" placeholder="投影">
+            <el-option label="EPSG:4326 (WGS84)" value="EPSG:4326" />
+            <el-option label="EPSG:3857 (Web Mercator)" value="EPSG:3857" />
+          </el-select>
+        </el-form-item>
+        <el-form-item label="图层名">
+          <el-input v-model="mapInfoForm.layer" />
+        </el-form-item>
+        <el-form-item label="矩阵集">
+          <el-input v-model="mapInfoForm.matrixSet" />
+        </el-form-item>
+      </el-form>
       <template #footer>
         <span class="dialog-footer">
-          <el-button @click="dialogFormVisible = false">Cancel</el-button>
-          <el-button type="primary" @click="downloadMap"> Confirm </el-button>
+          <el-button @click="dialogConfigVisible = false">取消</el-button>
+          <el-button type="primary" @click="handleUpdateMapConfig"> 确认 </el-button>
         </span>
       </template>
     </el-dialog>
@@ -74,6 +97,7 @@
 </template>
 
 <script setup>
+import { ElMessage } from 'element-plus'
 import { Feature } from 'ol'
 import Collection from 'ol/Collection.js'
 import Map from 'ol/Map'
@@ -92,15 +116,22 @@ import { onMounted, ref, toRaw } from 'vue'
 import { generateLayer, tiandituLayer } from './Map'
 
 const store = window.electronAPI.store
+const multipleTableRef = ref()
 
-const tableData = store.get('map_rules')
+const mapInfoForm = ref({})
+const mapTableData = ref(store.get('map_rules'))
+
+const dialogConfigVisible = ref(false)
+const dialogDownloadMapVisible = ref(false)
+
+const zoomOptions = ref([])
 
 // Get zoom for current view
 const getCurrentZoom = () => {
   return Math.round(map.getView().values_.zoom)
 }
 // Get extent for current view
-const getCurrentMapExtent = () => {
+const getCurrentViewExtent = () => {
   return map.getView().calculateExtent(map.getSize())
 }
 
@@ -108,42 +139,74 @@ const getCurrentSelectExtent = () => {
   return extentVec.getExtent()
 }
 
-// Set token
-const tokenDialogFormVisible = ref(false)
-const tokenForm = ref({})
-
-// Callback for event onUpdateToken
-window.electronAPI.onUpdateToken(() => {
-  tokenForm.value = store.get('map_rules')
-  tokenDialogFormVisible.value = true
-})
-
-const updateToken = () => {
-  window.electronAPI.updateToken(toRaw(tokenForm.value))
-  tokenDialogFormVisible.value = false
+const handleUpdateMapConfig = () => {
+  store.set('map_rules', toRaw(mapTableData.value))
+  dialogConfigVisible.value = false
 }
-// token设置部分
 
 // 下载部分
-const dialogFormVisible = ref(false)
-const zoomValue = ref([])
-
-const zoomOptions = Array.from({ length: 19 }, (_, index) => ({
-  value: index + 1,
-  label: index + 1
-}))
-
+//弹出下载框
 window.electronAPI.onDownloadMap(() => {
-  zoomValue.value = [getCurrentZoom()]
-  dialogFormVisible.value = true
+  const selectedRows = multipleTableRef.value?.getSelectionRows()
+
+  if (selectedRows.length === 0) {
+    ElMessage.error('未选择图层')
+    return
+  }
+  if (getCurrentSelectExtent()[0] === Infinity) {
+    ElMessage.error('未选择下载范围')
+    return
+  }
+
+  zoomOptions.value = []
+
+  //获取可下载的缩放等级的公共部分
+  for (let i = 0; i < selectedRows.length; i++) {
+    const row = selectedRows[i]
+    zoomOptions.value.push({
+      id: row.id,
+      label: row.label,
+      minZoom: row.min_zoom,
+      maxZoom: row.max_zoom,
+      selectedZoom: [row.max_zoom, row.min_zoom, getCurrentZoom()].sort((a, b) => a - b).slice(1, 2) //中位数
+    })
+  }
+  dialogDownloadMapVisible.value = true
 })
 
 const downloadMap = () => {
-  const extent = getCurrentMapExtent()
-  zoomValue.value.forEach((zoom) => {
-    window.electronAPI.downloadMap(extent, zoom)
-  })
-  dialogFormVisible.value = false
+  const extent = getCurrentSelectExtent()
+  const selectedRows = multipleTableRef.value?.getSelectionRows()
+  const configs = []
+
+  for (let i = 0; i < selectedRows.length; i++) {
+    // const row = toRaw(selectedRows[i])
+    zoomOptions.value[i].selectedZoom.forEach((zoom) => {
+      configs.push({ row: toRaw(selectedRows[i]), zoom: zoom })
+    })
+  }
+  console.log(extent)
+  window.electronAPI.downloadMap(configs, extent)
+
+  dialogDownloadMapVisible.value = false
+}
+
+//点击时改变图层
+const handleLayerSelectChange = (newItem, _oldItem) => {
+  if (newItem) {
+    customLayer.clear()
+    customLayer.push(generateLayer(newItem))
+  }
+}
+//编辑图层信息
+const handleEdit = (item) => {
+  for (let i of mapTableData.value) {
+    if (i.id === item.id) {
+      mapInfoForm.value = i
+    }
+  }
+  dialogConfigVisible.value = true
+  console.log(item)
 }
 
 //地图部分
@@ -156,32 +219,32 @@ const draw = new Draw({
   type: 'Circle',
   geometryFunction: createBox()
 })
-
 // 监听绘制结束事件,绘制完成后关闭绘制功能
 draw.on('drawend', (event) => {
   draw.setActive(false)
 })
-
-// 将当前地图视角设为polygon
+// 将当前地图视角设为extent
 window.electronAPI.extent.setCurrentViewAsExtent(() => {
-  const polygonFeature = new Feature({
-    geometry: fromExtent(getCurrentMapExtent())
-  })
+  draw.setActive(false)
   extentVec.clear()
-  extentVec.addFeature(polygonFeature)
+  extentVec.addFeature(
+    new Feature({
+      geometry: fromExtent(getCurrentViewExtent())
+    })
+  )
 })
-
+//手动绘制extent
 window.electronAPI.extent.drawRectangleAsExtent(() => {
   draw.setActive(true)
   extentVec.clear()
 })
+// 清空extent
+window.electronAPI.extent.clearExtent(() => {
+  extentVec.clear()
+})
 
 const map = new Map({
-  layers: [
-    tiandituLayer,
-    new LayerGroup({ layers: customLayer }),
-    new VectorLayer({ source: extentVec })
-  ],
+  layers: [tiandituLayer, new LayerGroup({ layers: customLayer }), new VectorLayer({ source: extentVec })],
   view: new View({
     center: [12000000, 5000000],
     zoom: 3,
@@ -190,17 +253,6 @@ const map = new Map({
   }),
   controls: [new Zoom(), new Attribution()]
 })
-
-const handleLayerSelectChange = (newItem, _oldItem) => {
-  if (newItem) {
-    customLayer.clear()
-    customLayer.push(generateLayer(newItem))
-  }
-}
-
-const handleEdit = (item) => {
-  console.log(item)
-}
 //地图部分
 
 onMounted(() => {

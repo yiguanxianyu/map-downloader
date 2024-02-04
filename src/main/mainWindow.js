@@ -3,7 +3,7 @@ import { BrowserWindow, Menu, ipcMain, shell } from 'electron'
 import { join } from 'path'
 
 import icon from '../../resources/icon.png?asset'
-import { getCurrentToken, updateToken } from './utils'
+import { downloadMap } from './downloadMap'
 
 let mainWindow
 
@@ -46,11 +46,8 @@ const createWindow = () => {
   Menu.setApplicationMenu(Menu.buildFromTemplate(menuTemplate))
 }
 
-ipcMain.on('update-token', (event, token) => {
-  updateToken(token)
-})
-ipcMain.on('download-map', (event, token) => {
-  updateToken(token)
+ipcMain.on('download-map', (event, configs, extent) => {
+  downloadMap(configs, extent)
 })
 
 const menuTemplate = [
@@ -61,16 +58,16 @@ const menuTemplate = [
     }
   },
   {
-    label: 'token设置',
-    click: () => {
-      mainWindow.webContents.send('on-update-token')
-    }
-  },
-  {
     label: '空间范围',
     submenu: [
       {
-        label: '将当前范围设置为下载范围',
+        label: '清除范围',
+        click: () => {
+          mainWindow.webContents.send('clear-extent')
+        }
+      },
+      {
+        label: '将当前视图设置为下载范围',
         click: () => {
           mainWindow.webContents.send('set-extent-current-view')
         }

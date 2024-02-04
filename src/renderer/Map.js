@@ -9,9 +9,7 @@ import WMTSTileGrid from 'ol/tilegrid/WMTS'
 const tiandituLayer = new TileLayer({
   title: '天地图卫星影像',
   source: new XYZ({
-    url:
-      'https://t4.tianditu.gov.cn/DataServer?T=img_w&x={x}&y={y}&l={z}&tk=' +
-      import.meta.env.RENDERER_VITE_API_KEY,
+    url: 'https://t4.tianditu.gov.cn/DataServer?T=img_w&x={x}&y={y}&l={z}&tk=' + import.meta.env.RENDERER_VITE_API_KEY,
     attributions: ['Map data &copy; <a href="https://www.tianditu.gov.cn/">天地图</a>']
   })
 })

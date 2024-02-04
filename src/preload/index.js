@@ -23,10 +23,8 @@ contextBridge.exposeInMainWorld('electronAPI', {
   sendDwldArgs: (zoom, extent) => ipcRenderer.send('download-map', zoom, extent),
   updateToken: (token) => ipcRenderer.send('update-token', token),
   onUpdateToken: (callback) => ipcRenderer.on('on-update-token', (_event) => callback()),
-
-  downloadMapx: (extent, zoom) => ipcRenderer.send('download-map', extent, zoom),
-  onDownloadMap: (callback) =>
-    ipcRenderer.on('on-download-map', (_event, value) => callback(value)),
+  downloadMap: (configs, extent) => ipcRenderer.send('download-map', configs, extent),
+  onDownloadMap: (callback) => ipcRenderer.on('on-download-map', (_event, value) => callback(value)),
   store: {
     set: (key, value) => {
       ipcRenderer.send('setStore', key, value)
@@ -37,9 +35,8 @@ contextBridge.exposeInMainWorld('electronAPI', {
     }
   },
   extent: {
-    setCurrentViewAsExtent: (callback) =>
-      ipcRenderer.on('set-extent-current-view', (_event) => callback()),
-    drawRectangleAsExtent: (callback) =>
-      ipcRenderer.on('set-extent-draw-rectangle', (_event) => callback())
+    setCurrentViewAsExtent: (callback) => ipcRenderer.on('set-extent-current-view', (_event) => callback()),
+    drawRectangleAsExtent: (callback) => ipcRenderer.on('set-extent-draw-rectangle', (_event) => callback()),
+    clearExtent: (callback) => ipcRenderer.on('clear-extent', (_event) => callback())
   }
 })
