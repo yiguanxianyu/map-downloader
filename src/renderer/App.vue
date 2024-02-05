@@ -98,22 +98,9 @@
 
 <script setup>
 import { ElMessage } from 'element-plus'
-import { Feature } from 'ol'
-import Collection from 'ol/Collection.js'
-import Map from 'ol/Map'
-import View from 'ol/View'
-import Attribution from 'ol/control/Attribution'
-import Zoom from 'ol/control/Zoom'
-import { fromExtent } from 'ol/geom/Polygon'
-import Draw, { createBox } from 'ol/interaction/Draw'
-import LayerGroup from 'ol/layer/Group'
-import VectorLayer from 'ol/layer/Vector'
-import 'ol/ol.css'
-import { transformExtent } from 'ol/proj'
-import VectorSource from 'ol/source/Vector'
 import { onMounted, ref, toRaw } from 'vue'
 
-import { generateLayer, tiandituLayer } from './Map'
+import MapHandler from './MapHandler'
 
 const store = window.electronAPI.store // 全局存储
 
@@ -123,21 +110,8 @@ const mapTableData = ref(store.get('map_rules')) // 地图列表
 const mapInfoForm = ref({}) // 编辑地图信息
 const dialogConfigVisible = ref(false) // 展示编辑地图信息的dialog
 
-const extentVec = new VectorSource({ wrapX: false }) // 存储范围的矢量图层
-const customLayer = new Collection([]) // 当前显示的图层
-
 const dialogDownloadMapVisible = ref(false) // 展示下载地图的dialog
 const zoomOptions = ref([]) // 下载地图界面的缩放选项
-
-const getCurrentZoom = () => {
-  return Math.round(map.getView().values_.zoom)
-}
-const getCurrentViewExtent = () => {
-  return map.getView().calculateExtent(map.getSize())
-}
-const getCurrentSelectExtent = () => {
-  return extentVec.getExtent()
-}
 
 const handleUpdateMapConfig = () => {
   store.set('map_rules', toRaw(mapTableData.value))
@@ -153,7 +127,7 @@ window.electronAPI.onDownloadMap(() => {
     ElMessage.error('未选择图层')
     return
   }
-  if (getCurrentSelectExtent()[0] === Infinity) {
+  if (!map.hasSelectedExtent()) {
     ElMessage.error('未选择下载范围')
     return
   }
@@ -168,14 +142,14 @@ window.electronAPI.onDownloadMap(() => {
       label: row.label,
       minZoom: row.min_zoom,
       maxZoom: row.max_zoom,
-      selectedZoom: [row.max_zoom, row.min_zoom, getCurrentZoom()].sort((a, b) => a - b).slice(1, 2) //中位数
+      selectedZoom: [row.max_zoom, row.min_zoom, map.currentZoom].sort((a, b) => a - b).slice(1, 2) //中位数
     })
   }
   dialogDownloadMapVisible.value = true
 })
 
 const handleDownloadMap = () => {
-  const extent = getCurrentSelectExtent()
+  const extent = map.currentSelectedExtent
   const selectedRows = multipleTableRef.value?.getSelectionRows()
   const configs = []
 
@@ -194,8 +168,7 @@ const handleDownloadMap = () => {
 //点击时改变图层
 const handleLayerSelectChange = (newItem, _oldItem) => {
   if (newItem) {
-    customLayer.clear()
-    customLayer.push(generateLayer(newItem))
+    map.changeCurrentLayer(newItem)
   }
 }
 //编辑图层信息
@@ -206,53 +179,26 @@ const handleEdit = (item) => {
 
 //地图部分
 
-// 创建交互绘制对象
-const draw = new Draw({
-  source: extentVec,
-  type: 'Circle',
-  geometryFunction: createBox()
-})
-// 监听绘制结束事件,绘制完成后关闭绘制功能
-draw.on('drawend', (event) => {
-  draw.setActive(false)
-})
 // 将当前地图视角设为extent
 window.electronAPI.extent.setCurrentViewAsExtent(() => {
-  draw.setActive(false)
-  extentVec.clear()
-  extentVec.addFeature(
-    new Feature({
-      geometry: fromExtent(getCurrentViewExtent())
-    })
-  )
+  map.setCurrentViewAsExtent()
 })
 //手动绘制extent
 window.electronAPI.extent.drawRectangleAsExtent(() => {
-  draw.setActive(true)
-  extentVec.clear()
+  map.setDrawActive(true)
+  map.clearExtent()
 })
 // 清空extent
 window.electronAPI.extent.clearExtent(() => {
-  extentVec.clear()
+  map.clearExtent()
 })
 
 //初始化地图
-const map = new Map({
-  layers: [tiandituLayer, new LayerGroup({ layers: customLayer }), new VectorLayer({ source: extentVec })],
-  view: new View({
-    center: [12000000, 5000000],
-    zoom: 3,
-    maxZoom: 18,
-    extent: transformExtent([60, 0, 150, 60], 'EPSG:4326', 'EPSG:3857')
-  }),
-  controls: [new Zoom(), new Attribution()]
-})
+const map = new MapHandler()
 //地图部分
 
 onMounted(() => {
   map.setTarget('map')
-  draw.setActive(false)
-  map.addInteraction(draw)
 })
 </script>
 
