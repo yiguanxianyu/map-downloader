@@ -183,15 +183,6 @@ const handleEdit = (item) => {
 window.electronAPI.extent.setCurrentViewAsExtent(() => {
   map.setCurrentViewAsExtent()
 })
-//手动绘制extent
-window.electronAPI.extent.drawRectangleAsExtent(() => {
-  map.setDrawActive(true)
-  map.clearExtent()
-})
-// 清空extent
-window.electronAPI.extent.clearExtent(() => {
-  map.clearExtent()
-})
 
 //初始化地图
 const map = new MapHandler()

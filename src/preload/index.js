@@ -35,8 +35,6 @@ contextBridge.exposeInMainWorld('electronAPI', {
     }
   },
   extent: {
-    setCurrentViewAsExtent: (callback) => ipcRenderer.on('set-extent-current-view', (_event) => callback()),
-    drawRectangleAsExtent: (callback) => ipcRenderer.on('set-extent-draw-rectangle', (_event) => callback()),
-    clearExtent: (callback) => ipcRenderer.on('clear-extent', (_event) => callback())
+    setCurrentViewAsExtent: (callback) => ipcRenderer.on('set-extent-current-view', (_event) => callback())
   }
 })

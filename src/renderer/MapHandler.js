@@ -1,22 +1,19 @@
-import { Feature } from 'ol'
 import Collection from 'ol/Collection.js'
 import Map from 'ol/Map'
 import View from 'ol/View'
 import Attribution from 'ol/control/Attribution'
 import Zoom from 'ol/control/Zoom'
+import { shiftKeyOnly } from 'ol/events/condition.js'
 import { getTopLeft, getWidth } from 'ol/extent'
-import { fromExtent } from 'ol/geom/Polygon'
-import Draw, { createBox } from 'ol/interaction/Draw'
+import Extent from 'ol/interaction/Extent'
 import LayerGroup from 'ol/layer/Group'
 import TileLayer from 'ol/layer/Tile'
-import VectorLayer from 'ol/layer/Vector'
 import 'ol/ol.css'
 import { get as getProjection, transformExtent } from 'ol/proj'
-import VectorSource from 'ol/source/Vector'
 import WMTS from 'ol/source/WMTS'
 import XYZ from 'ol/source/XYZ'
+import { Fill, Stroke, Style } from 'ol/style.js'
 import WMTSTileGrid from 'ol/tilegrid/WMTS'
-
 
 const tiandituLayer = new TileLayer({
   title: '天地图卫星影像',
@@ -76,7 +73,6 @@ const generateLayer = (mapConfig) => {
 
 class MyMap {
   constructor() {
-    this.extentVec = new VectorSource({ wrapX: false }) // 存储范围的矢量图层
     this.customLayer = new Collection([]) // 当前显示的图层
 
     this.view = new View({
@@ -87,38 +83,36 @@ class MyMap {
     })
 
     this.map = new Map({
-      layers: [
-        tiandituLayer,
-        new LayerGroup({ layers: this.customLayer }),
-        new VectorLayer({ source: this.extentVec })
-      ],
+      layers: [tiandituLayer, new LayerGroup({ layers: this.customLayer })],
       view: this.view,
       controls: [new Zoom(), new Attribution()]
     })
 
-    this.draw = new Draw({
-      source: this.extentVec,
-      type: 'Circle',
-      geometryFunction: createBox()
+    this.draw = new Extent({
+      condition: shiftKeyOnly,
+      boxStyle: new Style({
+        fill: new Fill({
+          color: [255, 255, 255, 0.3]
+        }),
+        stroke: new Stroke({
+          color: [0, 153, 255, 1],
+          width: 2
+        })
+      })
     })
-    // 监听绘制结束事件,绘制完成后关闭绘制功能
-    this.draw.on('drawend', (_event) => {
-      this.draw.setActive(false)
-    })
-    this.draw.setActive(false)
     this.map.addInteraction(this.draw)
   }
   get currentZoom() {
     return Math.round(this.view.values_.zoom)
   }
   get hasSelectedExtent() {
-    return this.extentVec.getExtent()[0] !== Infinity
+    return this.draw.getExtent() !== null
   }
   get currentViewExtent() {
-    this.view.calculateExtent(this.map.getSize())
+    return this.view.calculateExtent(this.map.getSize())
   }
   get currentSelectedExtent() {
-    this.extentVec.getExtent()
+    return this.draw.getExtent()
   }
 
   setTarget = (target) => this.map.setTarget(target)
@@ -128,17 +122,8 @@ class MyMap {
     this.customLayer.push(generateLayer(newLayer))
   }
   setCurrentViewAsExtent = () => {
-    this.setDrawActive(false)
-    this.clearExtent()
-
-    this.extentVec.addFeature(
-      new Feature({
-        geometry: fromExtent(this.currentViewExtent)
-      })
-    )
+    this.draw.setExtent(this.currentViewExtent)
   }
-  clearExtent = () => this.extentVec.clear()
-  setDrawActive = (state) => this.draw.setActive(state)
 }
 
 export default MyMap

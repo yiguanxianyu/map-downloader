@@ -61,25 +61,22 @@ const menuTemplate = [
     label: '空间范围',
     submenu: [
       {
-        label: '清除范围',
-        click: () => {
-          mainWindow.webContents.send('clear-extent')
-        }
-      },
-      {
         label: '将当前视图设置为下载范围',
         click: () => {
           mainWindow.webContents.send('set-extent-current-view')
         }
       },
       {
-        label: '从shp读取范围'
+        label: '从shp读取范围',
+        enabled: false
       },
       {
-        label: '在地图上勾选范围',
-        click: () => {
-          mainWindow.webContents.send('set-extent-draw-rectangle')
-        }
+        label: '按住shift在地图上勾画范围',
+        enabled: false
+      },
+      {
+        label: '按住shift+鼠标左键单击清除范围',
+        enabled: false
       }
     ]
   }
