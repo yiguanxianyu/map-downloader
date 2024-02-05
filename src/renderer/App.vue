@@ -104,21 +104,41 @@ import MapHandler from './MapHandler'
 
 const store = window.electronAPI.store // 全局存储
 
-const multipleTableRef = ref() //表格的引用
+/***************
+ * 图层部分
+ ***************/
+const multipleTableRef = ref() // 表格的引用
 const mapTableData = ref(store.get('map_rules')) // 地图列表
 
+//点击时改变图层
+const handleLayerSelectChange = (newItem, _oldItem) => {
+  if (newItem) {
+    map.changeCurrentLayer(newItem)
+  }
+}
+//编辑图层信息
+const handleEdit = (item) => {
+  mapInfoForm.value = item
+  dialogConfigVisible.value = true
+}
+
+/***************
+ * 地图配置部分
+ ***************/
 const mapInfoForm = ref({}) // 编辑地图信息
 const dialogConfigVisible = ref(false) // 展示编辑地图信息的dialog
-
-const dialogDownloadMapVisible = ref(false) // 展示下载地图的dialog
-const zoomOptions = ref([]) // 下载地图界面的缩放选项
 
 const handleUpdateMapConfig = () => {
   store.set('map_rules', toRaw(mapTableData.value))
   dialogConfigVisible.value = false
 }
 
-// 下载部分
+/***************
+ * 下载部分
+ ***************/
+const dialogDownloadMapVisible = ref(false) // 展示下载地图的dialog
+const zoomOptions = ref([]) // 下载地图界面的缩放选项
+
 //弹出下载框
 window.electronAPI.onDownloadMap(() => {
   const selectedRows = multipleTableRef.value?.getSelectionRows()
@@ -127,7 +147,7 @@ window.electronAPI.onDownloadMap(() => {
     ElMessage.error('未选择图层')
     return
   }
-  if (!map.hasSelectedExtent()) {
+  if (!map.hasSelectedExtent) {
     ElMessage.error('未选择下载范围')
     return
   }
@@ -147,46 +167,33 @@ window.electronAPI.onDownloadMap(() => {
   }
   dialogDownloadMapVisible.value = true
 })
-
+//下载地图
 const handleDownloadMap = () => {
   const extent = map.currentSelectedExtent
   const selectedRows = multipleTableRef.value?.getSelectionRows()
   const configs = []
-
+  //zoomOptions和selectedRows是长度相同的数组，长度是选择的图层数量
   for (let i = 0; i < selectedRows.length; i++) {
-    // const row = toRaw(selectedRows[i])
-    zoomOptions.value[i].selectedZoom.forEach((zoom) => {
-      configs.push({ row: toRaw(selectedRows[i]), zoom: zoom })
+    const zoomOption = zoomOptions.value[i]
+    const row = selectedRows[i]
+    zoomOption.selectedZoom.forEach((zoom) => {
+      configs.push({ row: toRaw(row), zoom: zoom })
     })
   }
-  console.log(extent)
+  // console.log(configs)
   window.electronAPI.downloadMap(configs, extent)
 
   dialogDownloadMapVisible.value = false
 }
 
-//点击时改变图层
-const handleLayerSelectChange = (newItem, _oldItem) => {
-  if (newItem) {
-    map.changeCurrentLayer(newItem)
-  }
-}
-//编辑图层信息
-const handleEdit = (item) => {
-  mapInfoForm.value = item
-  dialogConfigVisible.value = true
-}
-
-//地图部分
-
+/***************
+ * 地图部分
+ ***************/
+const map = new MapHandler()
 // 将当前地图视角设为extent
 window.electronAPI.extent.setCurrentViewAsExtent(() => {
   map.setCurrentViewAsExtent()
 })
-
-//初始化地图
-const map = new MapHandler()
-//地图部分
 
 onMounted(() => {
   map.setTarget('map')

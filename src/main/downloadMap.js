@@ -23,9 +23,10 @@ const getSaveFilePath = () => {
 
 const downloadMap = (configs, extent) => {
   // console.log(configs, extent)
-  const output_path = getSaveFilePath()[0]
+  const output_path = getSaveFilePath()
+  if (output_path === undefined) return
   configs.forEach((config) => {
-    downloadSingleMap(config, extent, output_path)
+    downloadSingleMap(config, extent, output_path[0])
   })
 }
 
