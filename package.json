@@ -20,24 +20,24 @@
     "@electron-toolkit/preload": "^3.0.0",
     "@electron-toolkit/utils": "^3.0.0",
     "electron-store": "^8.1.0",
-    "element-plus": "^2.5.4",
+    "element-plus": "^2.5.5",
     "ol": "^8.2.0",
     "pinia": "^2.1.7",
     "xml2js": "^0.6.2"
   },
   "devDependencies": {
     "@electron-toolkit/eslint-config": "^1.0.2",
-    "@rushstack/eslint-patch": "^1.6.1",
+    "@rushstack/eslint-patch": "^1.7.2",
     "@trivago/prettier-plugin-sort-imports": "^4.3.0",
-    "@vitejs/plugin-vue": "^4.5.2",
-    "@vue/eslint-config-prettier": "^8.0.0",
-    "electron": "^28.1.0",
+    "@vitejs/plugin-vue": "^5.0.3",
+    "@vue/eslint-config-prettier": "^9.0.0",
+    "electron": "^28.2.1",
     "electron-builder": "^24.9.1",
-    "electron-vite": "^1.0.29",
+    "electron-vite": "^2.0.0",
     "eslint": "^8.56.0",
-    "eslint-plugin-vue": "^9.19.2",
-    "prettier": "^3.1.1",
-    "vite": "^4.5.1",
-    "vue": "^3.3.13"
+    "eslint-plugin-vue": "^9.21.1",
+    "prettier": "^3.2.5",
+    "vite": "^5.0.12",
+    "vue": "^3.4.15"
   }
 }
