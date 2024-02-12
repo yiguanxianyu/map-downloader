@@ -4,13 +4,13 @@ import View from 'ol/View'
 import Attribution from 'ol/control/Attribution'
 import Zoom from 'ol/control/Zoom'
 import { shiftKeyOnly } from 'ol/events/condition.js'
-import { getTopLeft, getWidth } from 'ol/extent'
+import WMTSCapabilities from 'ol/format/WMTSCapabilities.js'
 import Extent from 'ol/interaction/Extent'
 import LayerGroup from 'ol/layer/Group'
 import TileLayer from 'ol/layer/Tile'
 import 'ol/ol.css'
-import { get as getProjection, transformExtent } from 'ol/proj'
-import WMTS from 'ol/source/WMTS'
+import { transformExtent } from 'ol/proj'
+import WMTS, { optionsFromCapabilities } from 'ol/source/WMTS'
 import XYZ from 'ol/source/XYZ'
 import { Fill, Stroke, Style } from 'ol/style.js'
 import WMTSTileGrid from 'ol/tilegrid/WMTS'
@@ -24,35 +24,32 @@ const tiandituLayer = new TileLayer({
 })
 
 //根据给定的配置生成一个WMTS图层
-const generateWMTSLayer = (mapConfig) => {
-  const projection = getProjection(mapConfig.projection)
-  const projectionExtent = projection.getExtent()
-  const size = getWidth(projectionExtent) / 256
+const generateWMTSLayer = async (mapConfig, callback) => {
+  const response_data = await window.electronAPI.getCapabilities(mapConfig.url + mapConfig.token_server)
 
-  // 计算分辨率和矩阵ID
-  const resolutions = []
-  const matrixIds = []
-  for (let i = mapConfig.min_zoom; i <= mapConfig.max_zoom; i++) {
-    resolutions.push(size / Math.pow(2, i + 1))
-    matrixIds.push(i)
-  }
+  const parser = new WMTSCapabilities()
+  const result = parser.read(response_data)
 
-  return new TileLayer({
-    title: mapConfig.label,
-    source: new WMTS({
-      url: mapConfig.url + mapConfig.token_browser,
-      layer: mapConfig.layer,
-      matrixSet: mapConfig.matrixSet,
-      projection: projection,
-      format: 'image/png',
-      tileGrid: new WMTSTileGrid({
-        origin: getTopLeft(projectionExtent), //原点(左上角)
-        resolutions: resolutions, //分辨率数组
-        matrixIds: matrixIds //矩阵标识列表，与地图级数保持一致
-      })
-    })
+  const options = optionsFromCapabilities(result, {
+    layer: mapConfig.layer,
+    matrixSet: mapConfig.matrixSet
   })
+  console.log(options)
+  options.urls[0] += 'tk=' + mapConfig.token_browser
+
+  options.tileGrid = new WMTSTileGrid({
+    origins: options.tileGrid.origins_, //原点(左上角)
+    resolutions: options.tileGrid.getResolutions(), //分辨率数组
+    matrixIds: options.tileGrid.getMatrixIds() //矩阵标识列表，与地图级数保持一致
+  })
+
+  const newLayer2add = new TileLayer({
+    source: new WMTS(options)
+  })
+
+  callback(newLayer2add)
 }
+
 // 根据给定的配置生成一个XYZ图层
 const generateXYZLayer = (mapConfig) => {
   return new TileLayer({
@@ -61,14 +58,6 @@ const generateXYZLayer = (mapConfig) => {
       url: mapConfig.url + mapConfig.token_browser
     })
   })
-}
-//根据给定的配置，判断生成什么图层
-const generateLayer = (mapConfig) => {
-  if (mapConfig.type === 'WMTS') {
-    return generateWMTSLayer(mapConfig)
-  } else if (mapConfig.type === 'XYZ') {
-    return generateXYZLayer(mapConfig)
-  }
 }
 
 class MyMap {
@@ -117,10 +106,20 @@ class MyMap {
 
   setTarget = (target) => this.map.setTarget(target)
 
-  changeCurrentLayer = (newLayer) => {
+  changeLayer = (newOLLayer) => {
     this.customLayer.clear()
-    this.customLayer.push(generateLayer(newLayer))
+    this.customLayer.push(newOLLayer)
   }
+
+  changeCurrentLayer = (mapConfig) => {
+    //根据给定的配置，判断生成什么图层
+    if (mapConfig.type === 'WMTS') {
+      generateWMTSLayer(mapConfig, this.changeLayer)
+    } else if (mapConfig.type === 'XYZ') {
+      generateXYZLayer(mapConfig, this.changeLayer)
+    }
+  }
+
   setCurrentViewAsExtent = () => {
     this.draw.setExtent(this.currentViewExtent)
   }
