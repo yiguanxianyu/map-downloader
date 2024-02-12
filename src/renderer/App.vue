@@ -45,7 +45,7 @@
       <template #footer>
         <span class="dialog-footer">
           <el-button @click="dialogDownloadMapVisible = false">取消</el-button>
-          <el-button type="primary" @click="handleDownloadMap"> 确认 </el-button>
+          <el-button type="primary" @click="handleDownloadMap">确认</el-button>
         </span>
       </template>
     </el-dialog>

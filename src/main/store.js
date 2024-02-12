@@ -10,7 +10,8 @@ const config = {
       label: '谷歌',
       type: 'XYZ',
       token_browser: 'token1',
-      token_server: '',
+      token_server:
+        'eyJhbGciOiJIUzI1NiJ9.eyJhdWQiOiI0NDdjNTViOS05OTJjLTRlOWUtYmU2OC1iZjdlNDlhYzNlNWQifQ.10VfI2wCxmMa9dCZ51Y_KXexkSXGvfEp4KROFb1odxg',
       min_zoom: 0,
       max_zoom: 14,
       projection: 'EPSG:4326'
@@ -23,7 +24,8 @@ const config = {
       type: 'WMTS',
       token_browser:
         'eyJhbGciOiJIUzI1NiJ9.eyJhdWQiOiJjYmE2Zjc4ZC1hNTExLTRmOTYtYTY3Yi1lMzA3MDZmNDY0ZDgifQ.pECeSVzA9d0NGLs_twUO8Z7zeVMr3srXPkmJHxn9o5Y',
-      token_server: '',
+      token_server:
+        'eyJhbGciOiJIUzI1NiJ9.eyJhdWQiOiI0NDdjNTViOS05OTJjLTRlOWUtYmU2OC1iZjdlNDlhYzNlNWQifQ.10VfI2wCxmMa9dCZ51Y_KXexkSXGvfEp4KROFb1odxg',
       min_zoom: 0,
       max_zoom: 14,
       projection: 'EPSG:4326',
@@ -38,7 +40,8 @@ const config = {
       type: 'WMTS',
       token_browser:
         'eyJhbGciOiJIUzI1NiJ9.eyJhdWQiOiJjYmE2Zjc4ZC1hNTExLTRmOTYtYTY3Yi1lMzA3MDZmNDY0ZDgifQ.pECeSVzA9d0NGLs_twUO8Z7zeVMr3srXPkmJHxn9o5Y',
-      token_server: '',
+      token_server:
+        'eyJhbGciOiJIUzI1NiJ9.eyJhdWQiOiI0NDdjNTViOS05OTJjLTRlOWUtYmU2OC1iZjdlNDlhYzNlNWQifQ.10VfI2wCxmMa9dCZ51Y_KXexkSXGvfEp4KROFb1odxg',
       min_zoom: 0,
       max_zoom: 13,
       projection: 'EPSG:4326',
@@ -53,7 +56,8 @@ const config = {
       type: 'WMTS',
       token_browser:
         'eyJhbGciOiJIUzI1NiJ9.eyJhdWQiOiJjYmE2Zjc4ZC1hNTExLTRmOTYtYTY3Yi1lMzA3MDZmNDY0ZDgifQ.pECeSVzA9d0NGLs_twUO8Z7zeVMr3srXPkmJHxn9o5Y',
-      token_server: '',
+      token_server:
+        'eyJhbGciOiJIUzI1NiJ9.eyJhdWQiOiI0NDdjNTViOS05OTJjLTRlOWUtYmU2OC1iZjdlNDlhYzNlNWQifQ.10VfI2wCxmMa9dCZ51Y_KXexkSXGvfEp4KROFb1odxg',
       min_zoom: 0,
       max_zoom: 11,
       projection: 'EPSG:4326',
@@ -67,7 +71,8 @@ const config = {
       label: '全国1:150万地质图-地质云',
       type: 'WMTS',
       token_browser: '',
-      token_server: '',
+      token_server:
+        'eyJhbGciOiJIUzI1NiJ9.eyJhdWQiOiI0NDdjNTViOS05OTJjLTRlOWUtYmU2OC1iZjdlNDlhYzNlNWQifQ.10VfI2wCxmMa9dCZ51Y_KXexkSXGvfEp4KROFb1odxg',
       min_zoom: 0,
       max_zoom: 14,
       projection: 'EPSG:4326',
@@ -81,7 +86,8 @@ const config = {
       label: '全国1:250万地质图-地质云',
       type: 'WMTS',
       token_browser: '',
-      token_server: '',
+      token_server:
+        'eyJhbGciOiJIUzI1NiJ9.eyJhdWQiOiI0NDdjNTViOS05OTJjLTRlOWUtYmU2OC1iZjdlNDlhYzNlNWQifQ.10VfI2wCxmMa9dCZ51Y_KXexkSXGvfEp4KROFb1odxg',
       min_zoom: 0,
       max_zoom: 14,
       projection: 'EPSG:4326',
