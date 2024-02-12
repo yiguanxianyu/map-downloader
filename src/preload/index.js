@@ -20,9 +20,6 @@ if (process.contextIsolated) {
 }
 
 contextBridge.exposeInMainWorld('electronAPI', {
-  sendDwldArgs: (zoom, extent) => ipcRenderer.send('download-map', zoom, extent),
-  updateToken: (token) => ipcRenderer.send('update-token', token),
-  onUpdateToken: (callback) => ipcRenderer.on('on-update-token', (_event) => callback()),
   downloadMap: (configs, extent) => ipcRenderer.send('download-map', configs, extent),
   onDownloadMap: (callback) => ipcRenderer.on('on-download-map', (_event, value) => callback(value)),
   getCapabilities: (url) => ipcRenderer.invoke('get-caps', url),

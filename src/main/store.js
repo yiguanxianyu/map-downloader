@@ -70,7 +70,8 @@ const config = {
       id: '5',
       label: '全国1:150万地质图-地质云',
       type: 'WMTS',
-      token_browser: 'eyJhbGciOiJIUzI1NiJ9.eyJhdWQiOiJjYmE2Zjc4ZC1hNTExLTRmOTYtYTY3Yi1lMzA3MDZmNDY0ZDgifQ.pECeSVzA9d0NGLs_twUO8Z7zeVMr3srXPkmJHxn9o5Y',
+      token_browser:
+        'eyJhbGciOiJIUzI1NiJ9.eyJhdWQiOiJjYmE2Zjc4ZC1hNTExLTRmOTYtYTY3Yi1lMzA3MDZmNDY0ZDgifQ.pECeSVzA9d0NGLs_twUO8Z7zeVMr3srXPkmJHxn9o5Y',
       token_server:
         'eyJhbGciOiJIUzI1NiJ9.eyJhdWQiOiI0NDdjNTViOS05OTJjLTRlOWUtYmU2OC1iZjdlNDlhYzNlNWQifQ.10VfI2wCxmMa9dCZ51Y_KXexkSXGvfEp4KROFb1odxg',
       min_zoom: 0,
@@ -85,7 +86,8 @@ const config = {
       id: '6',
       label: '全国1:250万地质图-地质云',
       type: 'WMTS',
-      token_browser: 'eyJhbGciOiJIUzI1NiJ9.eyJhdWQiOiJjYmE2Zjc4ZC1hNTExLTRmOTYtYTY3Yi1lMzA3MDZmNDY0ZDgifQ.pECeSVzA9d0NGLs_twUO8Z7zeVMr3srXPkmJHxn9o5Y',
+      token_browser:
+        'eyJhbGciOiJIUzI1NiJ9.eyJhdWQiOiJjYmE2Zjc4ZC1hNTExLTRmOTYtYTY3Yi1lMzA3MDZmNDY0ZDgifQ.pECeSVzA9d0NGLs_twUO8Z7zeVMr3srXPkmJHxn9o5Y',
       token_server:
         'eyJhbGciOiJIUzI1NiJ9.eyJhdWQiOiI0NDdjNTViOS05OTJjLTRlOWUtYmU2OC1iZjdlNDlhYzNlNWQifQ.10VfI2wCxmMa9dCZ51Y_KXexkSXGvfEp4KROFb1odxg',
       min_zoom: 0,
