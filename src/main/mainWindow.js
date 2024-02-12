@@ -1,4 +1,5 @@
 import { is } from '@electron-toolkit/utils'
+import axios from 'axios'
 import { BrowserWindow, Menu, ipcMain, shell } from 'electron'
 import { join } from 'path'
 
@@ -48,6 +49,17 @@ const createWindow = () => {
 
 ipcMain.on('download-map', (event, configs, extent) => {
   downloadMap(configs, extent)
+})
+
+ipcMain.handle('get-caps', async (event, url) => {
+  try {
+    const response = await axios.get(url)
+    // 处理成功情况
+    return response.data
+  } catch {
+    console.log('failed')
+  } finally {
+  }
 })
 
 const menuTemplate = [
