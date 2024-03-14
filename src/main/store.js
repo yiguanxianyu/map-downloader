@@ -4,6 +4,20 @@ import Store from 'electron-store'
 const config = {
   map_rules: [
     {
+      url: 'http://t0.tianditu.gov.cn/img_w/wmts?request=GetCapabilities&service=wmts',
+      provider: '天地图',
+      id: '0',
+      label: '天地图-矢量底图',
+      type: 'WMTS',
+      token_browser: 'd9262a81b7661921ef0606542b8d6653',
+      token_server: '',
+      min_zoom: 1,
+      max_zoom: 18,
+      projection: 'EPSG:3857',
+      layer: 'img',
+      matrixSet: 'w'
+    },
+    {
       url: 'http://example.com',
       provider: 'Google',
       id: '1',
@@ -14,10 +28,10 @@ const config = {
         'eyJhbGciOiJIUzI1NiJ9.eyJhdWQiOiI0NDdjNTViOS05OTJjLTRlOWUtYmU2OC1iZjdlNDlhYzNlNWQifQ.10VfI2wCxmMa9dCZ51Y_KXexkSXGvfEp4KROFb1odxg',
       min_zoom: 0,
       max_zoom: 14,
-      projection: 'EPSG:4326'
+      projection: 'EPSG:3857'
     },
     {
-      url: 'https://igss.cgs.gov.cn:6160/igs/rest/ogc/qg20_20210401_FCnDDRJd/WMTSServer?tk=',
+      url: 'https://igss.cgs.gov.cn:6160/igs/rest/ogc/qg20_20210401_FCnDDRJd/WMTSServer',
       provider: 'GeoCloud',
       id: '2',
       label: '全国1:20万地质图-地质云',
@@ -33,7 +47,7 @@ const config = {
       matrixSet: 'EPSG:4326_qg20_20210401_FCnDDRJd_028mm_GB'
     },
     {
-      url: 'https://igss.cgs.gov.cn:6160/igs/rest/ogc/qg50w_20210416_F7qGy9A7/WMTSServer?tk=',
+      url: 'https://igss.cgs.gov.cn:6160/igs/rest/ogc/qg50w_20210416_F7qGy9A7/WMTSServer',
       provider: 'GeoCloud',
       id: '3',
       label: '全国1:50万地质图-地质云',
@@ -49,7 +63,7 @@ const config = {
       matrixSet: 'EPSG:4326_qg50w_20210416_F7qGy9A7_028mm_GB'
     },
     {
-      url: 'https://igss.cgs.gov.cn:6160/igs/rest/ogc/全国100万地质图_20210330_rpam5kdJ/WMTSServer?tk=',
+      url: 'https://igss.cgs.gov.cn:6160/igs/rest/ogc/全国100万地质图_20210330_rpam5kdJ/WMTSServer',
       provider: 'GeoCloud',
       id: '4',
       label: '全国1:100万地质图-地质云',
@@ -65,7 +79,7 @@ const config = {
       matrixSet: 'EPSG:4326_全国100万地质图_20210330_rpam5kdJ_028mm_GB'
     },
     {
-      url: 'https://igss.cgs.gov.cn:6160/igs/rest/ogc/qg150w_20210416_BIwqE0wU/WMTSServer?tk=',
+      url: 'https://igss.cgs.gov.cn:6160/igs/rest/ogc/qg150w_20210416_BIwqE0wU/WMTSServer',
       provider: 'GeoCloud',
       id: '5',
       label: '全国1:150万地质图-地质云',
@@ -81,7 +95,7 @@ const config = {
       matrixSet: 'EPSG:4326_qg150w_20210416_BIwqE0wU_028mm_GB'
     },
     {
-      url: 'https://igss.cgs.gov.cn:6160/igs/rest/ogc/qg250w_20210416_ZAZSeOGX/WMTSServer?tk=',
+      url: 'https://igss.cgs.gov.cn:6160/igs/rest/ogc/qg250w_20210416_ZAZSeOGX/WMTSServer',
       provider: 'GeoCloud',
       id: '6',
       label: '全国1:250万地质图-地质云',

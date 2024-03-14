@@ -2,15 +2,8 @@
   <div id="app">
     <div id="container">
       <div id="sidebar">
-        <el-table
-          ref="multipleTableRef"
-          :data="mapTableData"
-          style="width: 100%"
-          size="small"
-          highlight-current-row
-          @current-change="handleLayerSelectChange"
-          height="95vh"
-        >
+        <el-table ref="multipleTableRef" :data="mapTableData" style="width: 100%" size="small" highlight-current-row
+          @current-change="handleLayerSelectChange" height="95vh">
           <el-table-column label="图层" show-overflow-tooltip>
             <template #default="scope">{{ scope.row.label }}</template>
           </el-table-column>
@@ -33,12 +26,8 @@
       <el-form label-position="top" label-width="100px" :model="zoomOptions">
         <el-form-item v-for="item in zoomOptions" :label="item.label" style="width: 100%">
           <el-select v-model="item.selectedZoom" multiple>
-            <el-option
-              v-for="i in item.maxZoom - item.minZoom + 1"
-              :key="i"
-              :label="i + item.minZoom - 1"
-              :value="i + item.minZoom - 1"
-            />
+            <el-option v-for="i in item.maxZoom - item.minZoom + 1" :key="i" :label="i + item.minZoom - 1"
+              :value="i + item.minZoom - 1" />
           </el-select>
         </el-form-item>
       </el-form>
@@ -49,6 +38,7 @@
         </span>
       </template>
     </el-dialog>
+
     <!-- 编辑地图配置的界面 -->
     <el-dialog v-model="dialogConfigVisible" title="配置地图">
       <el-form :model="mapInfoForm" label-width="120px">
@@ -79,11 +69,15 @@
             <el-option label="EPSG:3857 (Web Mercator)" value="EPSG:3857" />
           </el-select>
         </el-form-item>
-        <el-form-item label="图层名">
-          <el-input v-model="mapInfoForm.layer" />
+        <el-form-item label="图层名" v-if="mapInfoForm.type === 'WMTS'">
+          <el-select v-model="mapInfoForm.layer">
+            <el-option v-for="i in layerInfo" :label="i" :value="i" />
+          </el-select>
         </el-form-item>
-        <el-form-item label="矩阵集">
-          <el-input v-model="mapInfoForm.matrixSet" />
+        <el-form-item label="矩阵集" v-if="mapInfoForm.type === 'WMTS'">
+          <el-select v-model="mapInfoForm.matrixSet">
+            <el-option v-for="i in matrixSetInfo" :label="i" :value="i" />
+          </el-select>
         </el-form-item>
       </el-form>
       <template #footer>
@@ -97,10 +91,10 @@
 </template>
 
 <script setup>
-import { ElMessage } from 'element-plus'
-import { onMounted, ref, toRaw } from 'vue'
+import { ElMessage } from 'element-plus';
+import { onMounted, ref, toRaw } from 'vue';
 
-import MapHandler from './MapHandler'
+import { MapHandler, getWMTSCaps } from './MapHandler';
 
 const store = window.electronAPI.store // 全局存储
 
@@ -113,13 +107,28 @@ const mapTableData = ref(store.get('map_rules')) // 地图列表
 //点击时改变图层
 const handleLayerSelectChange = (newItem, _oldItem) => {
   if (newItem) {
-    map.changeCurrentLayer(newItem)
+    map.changeCurrentLayer(toRaw(newItem))
   }
 }
 //编辑图层信息
-const handleEdit = (item) => {
+const layerInfo = ref([])
+const matrixSetInfo = ref([])
+
+const handleEdit = async (item) => {
   mapInfoForm.value = item
   dialogConfigVisible.value = true
+
+  if (item.type === 'WMTS') {
+    await map.generateWMTSLayer(toRaw(item))
+    map.getTileMatrix("qg20_20210401_FCnDDRJd", "EPSG:4326_qg20_20210401_FCnDDRJd_028mm_GB", 4)
+
+    // window.electronAPI.getCapabilitiesResult(toRaw(item)).then((result_data) => {
+    //   const result = getWMTSCaps(result_data).Contents
+    //   console.log(result)
+    //   layerInfo.value = Array.from(result.Layer, (Layer) => Layer.Identifier)
+    //   matrixSetInfo.value = Array.from(result.TileMatrixSet, (MatrixSet) => MatrixSet.Identifier)
+    // })
+  }
 }
 
 /***************
@@ -130,6 +139,7 @@ const dialogConfigVisible = ref(false) // 展示编辑地图信息的dialog
 
 const handleUpdateMapConfig = () => {
   store.set('map_rules', toRaw(mapTableData.value))
+  map.changeCurrentLayer(toRaw(mapInfoForm.value))
   dialogConfigVisible.value = false
 }
 
@@ -197,6 +207,22 @@ window.electronAPI.extent.setCurrentViewAsExtent(() => {
 
 onMounted(() => {
   map.setTarget('map')
+  // console.log(map.map.getView().getResolutionForZoom(10))
+
+  const findClosestNumber = (numbers, target) => {
+    return numbers.reduce((prev, curr) => {
+      if (Math.abs(curr - target) < Math.abs(prev - target)) {
+        return curr;
+      } return prev;
+    });
+  }
+
+  // 示例使用
+  const numbers = [10, 22, 32, 45, 54, 60];
+  const target = 35;
+  const closest = findClosestNumber(numbers, target);
+  console.log(`给定数字列表 ${numbers} 中，与 ${target} 最接近的数字是 ${closest}`);
+
 })
 </script>
 

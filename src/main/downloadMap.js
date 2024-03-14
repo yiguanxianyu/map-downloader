@@ -2,6 +2,8 @@ import { exec } from 'child_process'
 import { app, dialog } from 'electron'
 import { join, resolve } from 'path'
 
+// import { getCapabilitiesResult } from './mapSourceConfigHandler.js'
+
 const showNote = (type, title, body) => {
   dialog.showMessageBoxSync(null, {
     type: type,
@@ -34,6 +36,11 @@ const downloadSingleMap = (config, extent, output_folder) => {
   const zoom = config.zoom
   const outputFileName = `${config.row.label}_level${zoom}.tif`
   const outputFilePath = join(output_folder, outputFileName)
+
+  const capabilitiesResult = getCapabilitiesResult(config.row.url + config.row.token_server)
+  console.log(capabilitiesResult)
+
+  const type = config.type
 
   return
 
