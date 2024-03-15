@@ -40,8 +40,8 @@ const config = {
         'eyJhbGciOiJIUzI1NiJ9.eyJhdWQiOiJjYmE2Zjc4ZC1hNTExLTRmOTYtYTY3Yi1lMzA3MDZmNDY0ZDgifQ.pECeSVzA9d0NGLs_twUO8Z7zeVMr3srXPkmJHxn9o5Y',
       token_server:
         'eyJhbGciOiJIUzI1NiJ9.eyJhdWQiOiI0NDdjNTViOS05OTJjLTRlOWUtYmU2OC1iZjdlNDlhYzNlNWQifQ.10VfI2wCxmMa9dCZ51Y_KXexkSXGvfEp4KROFb1odxg',
-      min_zoom: 0,
-      max_zoom: 14,
+      min_zoom: 1,
+      max_zoom: 15,
       projection: 'EPSG:4326',
       layer: 'qg20_20210401_FCnDDRJd',
       matrixSet: 'EPSG:4326_qg20_20210401_FCnDDRJd_028mm_GB'
@@ -56,8 +56,8 @@ const config = {
         'eyJhbGciOiJIUzI1NiJ9.eyJhdWQiOiJjYmE2Zjc4ZC1hNTExLTRmOTYtYTY3Yi1lMzA3MDZmNDY0ZDgifQ.pECeSVzA9d0NGLs_twUO8Z7zeVMr3srXPkmJHxn9o5Y',
       token_server:
         'eyJhbGciOiJIUzI1NiJ9.eyJhdWQiOiI0NDdjNTViOS05OTJjLTRlOWUtYmU2OC1iZjdlNDlhYzNlNWQifQ.10VfI2wCxmMa9dCZ51Y_KXexkSXGvfEp4KROFb1odxg',
-      min_zoom: 0,
-      max_zoom: 13,
+      min_zoom: 1,
+      max_zoom: 14,
       projection: 'EPSG:4326',
       layer: 'qg50w_20210416_F7qGy9A7',
       matrixSet: 'EPSG:4326_qg50w_20210416_F7qGy9A7_028mm_GB'

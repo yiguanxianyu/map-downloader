@@ -89,7 +89,7 @@ ipcMain.on('download-map', (event, configs, extent) => {
   downloadMap(configs, extent)
 })
 
-ipcMain.handle('get-caps', async (event, url) => {
+ipcMain.handle('get-url', async (event, url) => {
   try {
     const response = await axios.get(url)
     // 处理成功情况

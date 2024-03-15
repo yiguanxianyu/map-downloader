@@ -2,8 +2,15 @@
   <div id="app">
     <div id="container">
       <div id="sidebar">
-        <el-table ref="multipleTableRef" :data="mapTableData" style="width: 100%" size="small" highlight-current-row
-          @current-change="handleLayerSelectChange" height="95vh">
+        <el-table
+          ref="multipleTableRef"
+          :data="mapTableData"
+          style="width: 100%"
+          size="small"
+          highlight-current-row
+          @current-change="handleLayerSelectChange"
+          height="95vh"
+        >
           <el-table-column label="图层" show-overflow-tooltip>
             <template #default="scope">{{ scope.row.label }}</template>
           </el-table-column>
@@ -26,8 +33,12 @@
       <el-form label-position="top" label-width="100px" :model="zoomOptions">
         <el-form-item v-for="item in zoomOptions" :label="item.label" style="width: 100%">
           <el-select v-model="item.selectedZoom" multiple>
-            <el-option v-for="i in item.maxZoom - item.minZoom + 1" :key="i" :label="i + item.minZoom - 1"
-              :value="i + item.minZoom - 1" />
+            <el-option
+              v-for="i in item.maxZoom - item.minZoom + 1"
+              :key="i"
+              :label="i + item.minZoom - 1"
+              :value="i + item.minZoom - 1"
+            />
           </el-select>
         </el-form-item>
       </el-form>
@@ -91,10 +102,10 @@
 </template>
 
 <script setup>
-import { ElMessage } from 'element-plus';
-import { onMounted, ref, toRaw } from 'vue';
+import { ElMessage } from 'element-plus'
+import { onMounted, ref, toRaw } from 'vue'
 
-import { MapHandler, getWMTSCaps } from './MapHandler';
+import { MapHandler } from './MapHandler'
 
 const store = window.electronAPI.store // 全局存储
 
@@ -119,8 +130,8 @@ const handleEdit = async (item) => {
   dialogConfigVisible.value = true
 
   if (item.type === 'WMTS') {
-    await map.generateWMTSLayer(toRaw(item))
-    map.getTileMatrix("qg20_20210401_FCnDDRJd", "EPSG:4326_qg20_20210401_FCnDDRJd_028mm_GB", 4)
+    const tm = map.getTileUrlAtZoom(5)
+    console.log(tm)
 
     // window.electronAPI.getCapabilitiesResult(toRaw(item)).then((result_data) => {
     //   const result = getWMTSCaps(result_data).Contents
@@ -185,13 +196,22 @@ const handleDownloadMap = () => {
   //zoomOptions和selectedRows是长度相同的数组，长度是选择的图层数量
   for (let i = 0; i < selectedRows.length; i++) {
     const zoomOption = zoomOptions.value[i]
-    const row = selectedRows[i]
+    const row = toRaw(selectedRows[i])
     zoomOption.selectedZoom.forEach((zoom) => {
-      configs.push({ row: toRaw(row), zoom: zoom })
+      const layer = row.layer
+      const matrixSet = row.matrixSet
+      const tileMatrix = map.getTileMatrix(layer, matrixSet, zoom)
+      window.electronAPI.downloadMap(tileMatrix, extent)
+      configs.push({
+        layer: row.layer,
+        matrixSet: row.matrixSet,
+        zoom: zoom
+      })
+      // const url = new URL(options.urls[0])
     })
   }
-  // console.log(configs)
-  window.electronAPI.downloadMap(configs, extent)
+  console.log(configs)
+  // window.electronAPI.downloadMap(configs, extent)
 
   dialogDownloadMapVisible.value = false
 }
@@ -207,22 +227,6 @@ window.electronAPI.extent.setCurrentViewAsExtent(() => {
 
 onMounted(() => {
   map.setTarget('map')
-  // console.log(map.map.getView().getResolutionForZoom(10))
-
-  const findClosestNumber = (numbers, target) => {
-    return numbers.reduce((prev, curr) => {
-      if (Math.abs(curr - target) < Math.abs(prev - target)) {
-        return curr;
-      } return prev;
-    });
-  }
-
-  // 示例使用
-  const numbers = [10, 22, 32, 45, 54, 60];
-  const target = 35;
-  const closest = findClosestNumber(numbers, target);
-  console.log(`给定数字列表 ${numbers} 中，与 ${target} 最接近的数字是 ${closest}`);
-
 })
 </script>
 

@@ -21,8 +21,8 @@ dependencies:
     specifier: ^2.6.1
     version: 2.6.1(vue@3.4.21)
   ol:
-    specifier: ^8.2.0
-    version: 8.2.0
+    specifier: ^9.0.0
+    version: 9.0.0
 
 devDependencies:
   '@electron-toolkit/eslint-config':
@@ -3070,8 +3070,8 @@ packages:
     requiresBuild: true
     optional: true
 
-  /ol@8.2.0:
-    resolution: {integrity: sha512-/m1ddd7Jsp4Kbg+l7+ozR5aKHAZNQOBAoNZ5pM9Jvh4Etkf0WGkXr9qXd7PnhmwiC1Hnc2Toz9XjCzBBvexfXw==}
+  /ol@9.0.0:
+    resolution: {integrity: sha512-+nYHZYbHrRUTDJ8ryxXPdDoAiaT6Zea02cocmGqsJXs4Oac1fYC9EbTIU2Y7803QcmG3u2MR88RxbksBvK+ZfQ==}
     dependencies:
       color-rgba: 3.0.0
       color-space: 2.0.1

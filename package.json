@@ -23,7 +23,7 @@
     "axios": "^1.6.7",
     "electron-store": "^8.2.0",
     "element-plus": "^2.6.1",
-    "ol": "^8.2.0"
+    "ol": "^9.0.0"
   },
   "devDependencies": {
     "@electron-toolkit/eslint-config": "^1.0.2",
