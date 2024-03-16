@@ -3,7 +3,12 @@ import TileLayer from 'ol/layer/Tile'
 import WMTS, { optionsFromCapabilities } from 'ol/source/WMTS'
 import WMTSTileGrid from 'ol/tilegrid/WMTS'
 
-class mapProviderConfig {
+class baseProvider {
+  /**
+   * Base class for map provider.
+   *
+   * @param {Object} config - The configuration object containing properties to be assigned.
+   */
   constructor(config) {
     Object.assign(this, config)
 
@@ -20,36 +25,32 @@ class mapProviderConfig {
   }
 }
 
-class wmtsProvider extends mapProviderConfig {
+class wmtsProvider extends baseProvider {
   constructor(config) {
     super(config)
     this.capabilities = null
     this.options = null
     this.layer = config.layer
     this.matrixSet = config.matrixSet
-    this.wmts_layer_info = new Object()
+    this.wmts_layer_info = null
   }
   async initialize() {
     await this.getCapabilities()
-    this.getOptions(this.capabilities)
+    this.getOptions()
+    this.getWMTSLayerInfo()
   }
-  
   getWMTSConfig() {
     throw new Error('Not Implemented')
   }
-
   async getCapabilities() {
     throw new Error('Not Implemented')
   }
-
   async getOptions() {
     throw new Error('Not Implemented')
   }
-
   async getTileUrl(tileMatrix) {
     throw new Error('Not Implemented')
   }
-
   exportWMTSLayerConfig() {
     return {
       url: this.url,
@@ -66,24 +67,23 @@ class wmtsProvider extends mapProviderConfig {
       type: this.type
     }
   }
-
-  checkIsReady() {
-    if (this.capabilities === null) return false
-    if (this.options === null) return false
-    if (this.layer === null) return false
-    if (this.matrixSet === null) return false
-    return true
-  }
-
   generateLayer() {
     this.layer = new TileLayer({
       source: new WMTS(this.options)
     })
     return this.layer
   }
+  /**
+   * Retrieves the WMTS layer information.
+   *
+   * @return {Object} The WMTS layer information.
+   */
+  getWMTSLayerInfo() {
+    if (this.wmts_layer_info !== null) {
+      return this.wmts_layer_info
+    }
 
-  setWMTSLayerInfo(capabilities) {
-    const result = capabilities.Contents
+    const result = this.capabilities.Contents
 
     const Layers = result.Layer
     const TileMatrixSets = result.TileMatrixSet
@@ -109,7 +109,6 @@ class wmtsProvider extends mapProviderConfig {
       }
     }
   }
-
   getTileMatrixAtZoom(zoom) {
     // Calculate the tilematrix for the given zoom level
     const layer = this.mapProvider.wmts_layer_info[this.layer]
@@ -129,11 +128,13 @@ class wmtsProvider extends mapProviderConfig {
     })
     return result
   }
-
   getTileUrlAtZoom(zoom) {
     const tileMatrix = this.getTileMatrixAtZoom(zoom)
     const url = this.getTileUrl(tileMatrix)
     return url
+  }
+  refresh() {
+    this.getOptions()
   }
 }
 
@@ -152,8 +153,6 @@ class geocloudWMTSProvider extends wmtsProvider {
     const result = parser.read(response_data)
 
     this.capabilities = result
-
-    return true
   }
 
   getTileUrl(tileMatrix) {
@@ -183,12 +182,8 @@ class geocloudWMTSProvider extends wmtsProvider {
     this.refresh()
   }
 
-  refresh() {
-    this.getOptions()
-  }
-
-  getOptions(capabilities) {
-    const options = optionsFromCapabilities(capabilities, {
+  getOptions() {
+    const options = optionsFromCapabilities(this.capabilities, {
       layer: this.layer,
       matrixSet: this.tileMatrixSet
     })
@@ -204,7 +199,7 @@ class geocloudWMTSProvider extends wmtsProvider {
   }
 }
 
-class xyzProvider extends mapProviderConfig {
+class xyzProvider extends baseProvider {
   constructor(config) {
     super(config)
   }

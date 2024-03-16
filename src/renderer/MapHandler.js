@@ -30,7 +30,7 @@ const getWMTSCaps = (response_data) => {
   return result
 }
 
-class MyMap {
+class MapHandler {
   constructor() {
     this.customLayer = new Collection([]) // 当前显示的图层
 
@@ -74,6 +74,15 @@ class MyMap {
   }
   get currentSelectedExtent() {
     return this.draw.getExtent()
+  }
+
+  async getWMTSLayerInfo(item) {
+    if (!(item.id in this.providers)) {
+      this.providers[item.id] = await getMapProvier(item)
+    }
+    const provider = this.providers[item.id]
+    const wmts_layer_info = provider.getWMTSLayerInfo()
+    return wmts_layer_info
   }
 
   async getCurrentTileUrl(tileMatrix) {
@@ -120,4 +129,4 @@ class MyMap {
   }
 }
 
-export { MyMap as MapHandler, getWMTSCaps }
+export { MapHandler }

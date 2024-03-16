@@ -82,12 +82,12 @@
         </el-form-item>
         <el-form-item label="图层名" v-if="mapInfoForm.type === 'WMTS'">
           <el-select v-model="mapInfoForm.layer">
-            <el-option v-for="i in layerInfo" :label="i" :value="i" />
+            <el-option v-for="(_, index) in layerInfo" :label="index" :value="index" />
           </el-select>
         </el-form-item>
         <el-form-item label="矩阵集" v-if="mapInfoForm.type === 'WMTS'">
           <el-select v-model="mapInfoForm.matrixSet">
-            <el-option v-for="i in matrixSetInfo" :label="i" :value="i" />
+            <el-option v-for="(_, index) in layerInfo[mapInfoForm.layer]" :label="index" :value="index" />
           </el-select>
         </el-form-item>
       </el-form>
@@ -123,22 +123,13 @@ const handleLayerSelectChange = (newItem, _oldItem) => {
 }
 //编辑图层信息
 const layerInfo = ref([])
-const matrixSetInfo = ref([])
 
 const handleEdit = async (item) => {
   mapInfoForm.value = item
   dialogConfigVisible.value = true
 
   if (item.type === 'WMTS') {
-    const tm = map.getTileUrlAtZoom(5)
-    console.log(tm)
-
-    // window.electronAPI.getCapabilitiesResult(toRaw(item)).then((result_data) => {
-    //   const result = getWMTSCaps(result_data).Contents
-    //   console.log(result)
-    //   layerInfo.value = Array.from(result.Layer, (Layer) => Layer.Identifier)
-    //   matrixSetInfo.value = Array.from(result.TileMatrixSet, (MatrixSet) => MatrixSet.Identifier)
-    // })
+    layerInfo.value = await map.getWMTSLayerInfo(toRaw(item))
   }
 }
 
