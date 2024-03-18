@@ -10,9 +10,6 @@ files:
   - '!{.env,.env.*,.npmrc,pnpm-lock.yaml}'
 asarUnpack:
   - resources/**
-extraResources:
-  - from: resources/python
-    to: python
 win:
   executableName: tif_downloader
 nsis:
