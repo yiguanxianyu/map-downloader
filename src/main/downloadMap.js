@@ -2,6 +2,8 @@ import { exec } from 'child_process'
 import { app, dialog } from 'electron'
 import { join, resolve } from 'path'
 
+import mapDownloader from './canvas-download.js'
+
 // import { getCapabilitiesResult } from './mapSourceConfigHandler.js'
 
 const showNote = (type, title, body) => {

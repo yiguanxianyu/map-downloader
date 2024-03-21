@@ -2,7 +2,6 @@ import { electronApp, optimizer } from '@electron-toolkit/utils'
 import { BrowserWindow, app } from 'electron'
 
 import { createWindow } from './mainWindow.js'
-// import './mapSourceConfigHandler.js'
 import './store.js'
 
 // This method will be called when Electron has finished

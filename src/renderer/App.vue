@@ -15,7 +15,7 @@
             <template #default="scope">{{ scope.row.label }}</template>
           </el-table-column>
           <el-table-column type="selection" width="25px" fixed="right" />
-          <el-table-column fixed="right" label="操作" width="60px">
+          <el-table-column fixed="right" label="操作" width="65px">
             <template #default="scope">
               <el-button type="primary" size="small" @click="handleEdit(scope.row)">编辑</el-button>
             </template>
