@@ -12,10 +12,7 @@ on:
 
 jobs:
   build:
-    runs-on: ${{ matrix.os }}
-    strategy:
-      matrix:
-        os: [ubuntu-latest, windows-latest]
+    runs-on: windows-latest
     steps:
       - name: Check out Git repository
         uses: actions/checkout@v4
@@ -32,18 +29,10 @@ jobs:
         run: pnpm install
 
       - name: Build application
-        run: |
-          if [ "${{ matrix.os }}" == "windows-latest" ]; then
-            pnpm build:win
-          else
-            pnpm build:linux
-          fi
+        run: pnpm build:win
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
-          name: ${{ runner.os }}-app
-          path: |
-            dist/**/*.exe
-            dist/**/*.AppImage
-            dist/**/*.deb
+          name: windows-app
+          path: dist/*.exe
