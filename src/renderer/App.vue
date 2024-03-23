@@ -2,25 +2,24 @@
   <div id="app">
     <div id="container">
       <div id="sidebar">
-        <el-table
-          ref="multipleTableRef"
-          :data="mapTableData"
+        <el-tree
+          ref="treeRef"
           style="width: 100%"
-          size="small"
-          highlight-current-row
+          :data="mapTableData"
+          show-checkbox
+          draggable
+          :allow-drop="allowDrop"
           @current-change="handleLayerSelectChange"
-          height="95vh"
+          highlight-current
         >
-          <el-table-column label="图层" show-overflow-tooltip>
-            <template #default="scope">{{ scope.row.label }}</template>
-          </el-table-column>
-          <el-table-column type="selection" width="25px" fixed="right" />
-          <el-table-column fixed="right" label="操作" width="65px">
-            <template #default="scope">
-              <el-button type="primary" size="small" @click="handleEdit(scope.row)">编辑</el-button>
-            </template>
-          </el-table-column>
-        </el-table>
+          <template #default="{ node, data }">
+            <span class="custom-tree-node">
+              <span>{{ node.label }}</span>
+              <el-button type="primary" size="small" @click="handleEdit(data)">编辑</el-button>
+            </span>
+          </template>
+        </el-tree>
+
         <div style="margin-bottom: 20px">
           <el-button @click="">Add</el-button>
         </div>
@@ -33,12 +32,7 @@
       <el-form label-position="top" label-width="100px" :model="zoomOptions">
         <el-form-item v-for="item in zoomOptions" :label="item.label" style="width: 100%">
           <el-select v-model="item.selectedZoom" multiple>
-            <el-option
-              v-for="i in item.maxZoom - item.minZoom + 1"
-              :key="i"
-              :label="i + item.minZoom - 1"
-              :value="i + item.minZoom - 1"
-            />
+            <el-option v-for="i in item.zoomNumbers" :key="i" :label="i" :value="i" />
           </el-select>
         </el-form-item>
       </el-form>
@@ -112,11 +106,16 @@ const store = window.electronAPI.store // 全局存储
 /***************
  * 图层部分
  ***************/
-const multipleTableRef = ref() // 表格的引用
+const treeRef = ref() // 树的引用
 const mapTableData = ref(store.get('map_rules')) // 地图列表
 
+
+const allowDrop = (draggingNode, dropNode, type) => {
+  return type !== 'inner'
+}
+
 //点击时改变图层
-const handleLayerSelectChange = (newItem, _oldItem) => {
+const handleLayerSelectChange = (newItem) => {
   if (newItem) {
     map.changeCurrentLayer(toRaw(newItem))
   }
@@ -153,9 +152,9 @@ const zoomOptions = ref([]) // 下载地图界面的缩放选项
 
 //弹出下载框
 window.electronAPI.onDownloadMap(() => {
-  const selectedRows = multipleTableRef.value?.getSelectionRows()
+  const selectedLayers = treeRef.value?.getCheckedNodes(true)
 
-  if (selectedRows.length === 0) {
+  if (selectedLayers.length === 0) {
     ElMessage.error('未选择图层')
     return
   }
@@ -167,14 +166,13 @@ window.electronAPI.onDownloadMap(() => {
   zoomOptions.value = []
 
   //获取可下载的缩放等级的公共部分
-  for (let i = 0; i < selectedRows.length; i++) {
-    const row = selectedRows[i]
+  for (let i = 0; i < selectedLayers.length; i++) {
+    const layer = selectedLayers[i]
     zoomOptions.value.push({
-      id: row.id,
-      label: row.label,
-      minZoom: row.min_zoom,
-      maxZoom: row.max_zoom,
-      selectedZoom: [row.max_zoom, row.min_zoom, map.currentZoom].sort((a, b) => a - b).slice(1, 2) //中位数
+      id: layer.id,
+      label: layer.label,
+      zoomNumbers: Array.from({ length: layer.max_zoom - layer.min_zoom + 1 }, (_, k) => k + layer.min_zoom),
+      selectedZoom: Math.max(Math.min(layer.max_zoom, map.currentZoom), layer.min_zoom) //中位数
     })
   }
   dialogDownloadMapVisible.value = true
@@ -182,9 +180,10 @@ window.electronAPI.onDownloadMap(() => {
 //下载地图
 const handleDownloadMap = () => {
   const extent = map.currentSelectedExtent
-  const selectedRows = multipleTableRef.value?.getSelectionRows()
+
+  const selectedRows = treeRef.value?.getCheckedNodes(true)
   const configs = []
-  //zoomOptions和selectedRows是长度相同的数组，长度是选择的图层数量
+  // zoomOptions和selectedRows是长度相同的数组，长度是选择的图层数量
   for (let i = 0; i < selectedRows.length; i++) {
     const zoomOption = zoomOptions.value[i]
     const row = toRaw(selectedRows[i])
@@ -272,5 +271,24 @@ onMounted(() => {
 
 :deep(.ol-attribution a) {
   color: #2669dd;
+}
+
+.custom-tree-node {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 12px;
+  padding-left: 0;
+  padding-right: 8px;
+}
+
+:deep(.el-tree-node__expand-icon) {
+  padding: 4px;
+  width: 0px;
+}
+
+:deep(.el-tree-node__content) {
+  height: 30px;
 }
 </style>
