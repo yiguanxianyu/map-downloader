@@ -1,3 +1,4 @@
+import View from 'ol/View'
 import WMTSCapabilities from 'ol/format/WMTSCapabilities.js'
 import TileLayer from 'ol/layer/Tile'
 import WMTS, { optionsFromCapabilities } from 'ol/source/WMTS'
@@ -68,10 +69,9 @@ class wmtsProvider extends baseProvider {
     }
   }
   generateLayer() {
-    this.layer = new TileLayer({
+    return new TileLayer({
       source: new WMTS(this.options)
     })
-    return this.layer
   }
   /**
    * Retrieves the WMTS layer information.
@@ -111,14 +111,16 @@ class wmtsProvider extends baseProvider {
   }
   getTileMatrixAtZoom(zoom) {
     // Calculate the tilematrix for the given zoom level
-    const layer = this.mapProvider.wmts_layer_info[this.layer]
+    const layer = this.wmts_layer_info[this.layer]
     const tms = layer[this.matrixSet]
-    // const code = tms.SupportedCRS;
-    // const projection = code ? getProjection(code) : getProjection('EPSG:4326');
 
-    const unit_map = this.view.getProjection().getMetersPerUnit()
-    const resolutionForZoom = this.view.getResolutionForZoom(zoom)
-    const targetSD = (resolutionForZoom * unit_map) / 0.00028
+    const view = new View({
+      projection: tms.SupportedCRS,
+      center: [0, 0],
+      zoom: zoom + 1
+    })
+    const unit_map = view.getProjection().getMetersPerUnit()
+    const targetSD = (view.getResolution() * unit_map) / 0.00028
 
     const result = tms.TileMatrix.reduce((prev, curr) => {
       if (Math.abs(curr.ScaleDenominator - targetSD) < Math.abs(prev.ScaleDenominator - targetSD)) {
@@ -126,12 +128,12 @@ class wmtsProvider extends baseProvider {
       }
       return prev
     })
+
     return result
   }
   getTileUrlAtZoom(zoom) {
     const tileMatrix = this.getTileMatrixAtZoom(zoom)
-    const url = this.getTileUrl(tileMatrix)
-    return url
+    return this.getTileUrl(tileMatrix.Identifier)
   }
   refresh() {
     this.getOptions()
@@ -160,20 +162,20 @@ class geocloudWMTSProvider extends wmtsProvider {
       return
     }
 
-    const url = new URL(this.options.urls[0])
-    url.searchParams.set('service', 'wmts')
-    url.searchParams.set('request', 'GetTile')
-    url.searchParams.set('version', '1.0.0')
-    url.searchParams.set('format', 'image/png')
-    url.searchParams.set('style', 'default')
-    url.searchParams.set('layer', this.layer)
-    url.searchParams.set('tilematrixset', this.matrixSet)
-    url.searchParams.set('tilematrix', tileMatrix)
-    url.searchParams.set('tilerow', '{TileRow}')
-    url.searchParams.set('tilecol', '{TileCol}')
-    url.searchParams.set('tk', this.token_server)
-
-    return url.toString()
+    return {
+      url: this.url,
+      params: {
+        Service: 'WMTS',
+        Request: 'GetTile',
+        Version: '1.0.0',
+        Format: 'image/png',
+        style: 'default',
+        layer: this.layer,
+        tilematrixset: this.matrixSet,
+        tilematrix: tileMatrix,
+        tk: this.token_server
+      }
+    }
   }
 
   setConfig(layer, tileMatrixSet) {

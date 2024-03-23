@@ -85,8 +85,8 @@ const menuTemplate = [
   }
 ]
 
-ipcMain.on('download-map', (event, configs, extent) => {
-  downloadMap(configs, extent)
+ipcMain.on('download-map', (event, configs) => {
+  downloadMap(configs)
 })
 
 ipcMain.handle('get-url', async (event, url) => {

@@ -69,11 +69,10 @@ class MapHandler {
   get hasSelectedExtent() {
     return this.draw.getExtent() !== null
   }
-  get currentViewExtent() {
-    return this.view.calculateExtent(this.map.getSize())
-  }
-  get currentSelectedExtent() {
-    return this.draw.getExtent()
+
+  getCurrentSelectedExtentForLayer(mapConfig) {
+    const extent = this.draw.getExtent()
+    return transformExtent(extent, this.map.getView().getProjection(), mapConfig.projection)
   }
 
   async getWMTSLayerInfo(item) {
@@ -85,21 +84,11 @@ class MapHandler {
     return wmts_layer_info
   }
 
-  async getCurrentTileUrl(tileMatrix) {
-    if (this.currentProvider.type === 'WMTS' || this.currentProvider.type === 'XYZ') {
-      return await this.currentProvider.getTileUrl(tileMatrix)
+  async getTileUrlAtZoom(item, zoom) {
+    if (!(item.id in this.providers)) {
+      this.providers[item.id] = await getMapProvier(item)
     }
-    throw new Error('Not Implemented')
-  }
-
-  getCurrentTileUrlAtZoom(zoom) {
-    if (this.currentProvider.type === 'WMTS' || this.currentProvider.type === 'XYZ') {
-      const tileMatrix = this.currentProvider.getTileMatrix(
-        this.currentProvider.layer,
-        this.currentProvider.matrixSet,
-        zoom
-      )
-    }
+    return this.providers[item.id].getTileUrlAtZoom(zoom)
   }
 
   setTarget(target) {
@@ -121,11 +110,6 @@ class MapHandler {
     this.changeLayer(newLayer)
     this.currentProvider = newProvider
     this.providers[newProvider.id] = newProvider
-  }
-
-  getTileUrlAtZoom(id, zoom) {
-    const provider = this.providers[id]
-    return provider.getTileUrlAtZoom(zoom)
   }
 }
 

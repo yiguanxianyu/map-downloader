@@ -109,7 +109,6 @@ const store = window.electronAPI.store // 全局存储
 const treeRef = ref() // 树的引用
 const mapTableData = ref(store.get('map_rules')) // 地图列表
 
-
 const allowDrop = (draggingNode, dropNode, type) => {
   return type !== 'inner'
 }
@@ -172,36 +171,43 @@ window.electronAPI.onDownloadMap(() => {
       id: layer.id,
       label: layer.label,
       zoomNumbers: Array.from({ length: layer.max_zoom - layer.min_zoom + 1 }, (_, k) => k + layer.min_zoom),
-      selectedZoom: Math.max(Math.min(layer.max_zoom, map.currentZoom), layer.min_zoom) //中位数
+      selectedZoom: [Math.max(Math.min(layer.max_zoom, map.currentZoom), layer.min_zoom)] //中位数
     })
   }
   dialogDownloadMapVisible.value = true
 })
-//下载地图
-const handleDownloadMap = () => {
-  const extent = map.currentSelectedExtent
 
-  const selectedRows = treeRef.value?.getCheckedNodes(true)
+//下载地图
+const handleDownloadMap = async () => {
+  const selectedLayers = treeRef.value?.getCheckedNodes(true)
+
   const configs = []
+
   // zoomOptions和selectedRows是长度相同的数组，长度是选择的图层数量
-  for (let i = 0; i < selectedRows.length; i++) {
+  const promises = selectedLayers.map(async (layer, i) => {
     const zoomOption = zoomOptions.value[i]
-    const row = toRaw(selectedRows[i])
-    zoomOption.selectedZoom.forEach((zoom) => {
-      const layer = row.layer
-      const matrixSet = row.matrixSet
-      const tileMatrix = map.getTileMatrix(layer, matrixSet, zoom)
-      window.electronAPI.downloadMap(tileMatrix, extent)
-      configs.push({
-        layer: row.layer,
-        matrixSet: row.matrixSet,
-        zoom: zoom
+    const row = toRaw(layer)
+
+    const currConfig = {
+      name: row.layer,
+      type: row.type,
+      extent: map.getCurrentSelectedExtentForLayer(layer),
+      urls: []
+    }
+
+    await Promise.all(
+      zoomOption.selectedZoom.map(async (zoom) => {
+        const url = await map.getTileUrlAtZoom(row, zoom)
+        currConfig.urls.push({ url, zoom })
       })
-      // const url = new URL(options.urls[0])
-    })
-  }
-  console.log(configs)
-  // window.electronAPI.downloadMap(configs, extent)
+    )
+
+    configs.push(currConfig)
+  })
+
+  await Promise.all(promises)
+
+  window.electronAPI.downloadMap(configs)
 
   dialogDownloadMapVisible.value = false
 }
