@@ -44,17 +44,18 @@ const downloadMap = (configs) => {
       const handler = getDatasetHandler(config.type, item.url, item.zoom, config.extent)
 
       handler.download(newFilePath).then(() => {
-        execFile(
-          'MHGDALAddo.exe',
-          [newFilePath],
-          {
-            cwd: join(process.cwd(), '/resources/gdaladdo')
-          },
-          (error, stdout, stderr) => {
-            if (error)
-              throw new Error(error)
-          }
-        )
+        if (process.platform === 'win32') {
+          execFile(
+            'MHGDALAddo.exe',
+            [newFilePath],
+            {
+              cwd: join(process.cwd(), '/resources/gdaladdo')
+            },
+            (error, stdout, stderr) => {
+              if (error) throw new Error(error)
+            }
+          )
+        }
       })
     }
   })
