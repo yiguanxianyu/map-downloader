@@ -1,6 +1,6 @@
 import { is } from '@electron-toolkit/utils'
 import axios from 'axios'
-import { BrowserWindow, Menu, ipcMain, shell } from 'electron'
+import { BrowserWindow, Menu, ipcMain, shell, app } from 'electron'
 import { dirname } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { join } from 'path'
@@ -84,6 +84,21 @@ const menuTemplate = [
     ]
   }
 ]
+
+if (process.platform === 'darwin') {
+  menuTemplate.unshift({
+    label: app.getName(),
+    submenu: [
+      {
+        label: 'Quit',
+        accelerator: 'CmdOrCtrl+Q',
+        click() {
+          app.quit();
+        }
+      }
+    ]
+  });
+}
 
 ipcMain.on('download-map', (event, configs) => {
   downloadMap(configs)
