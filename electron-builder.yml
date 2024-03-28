@@ -12,11 +12,10 @@ asarUnpack:
   - resources/**
 win:
   executableName: MHImgDown
-  extraResources:
-    - from: resources/gdaladdo
-      to: gdaladdo
+portable:
+  artifactName: ${productName}-v${version}-portable.${ext}
 nsis:
-  artifactName: ${name}-${version}-setup.${ext}
+  artifactName: ${productName}-${version}-setup.${ext}
   shortcutName: ${productName}
   uninstallDisplayName: ${productName}
   createDesktopShortcut: always
