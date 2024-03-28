@@ -3,33 +3,33 @@ import Store from 'electron-store'
 
 const config = {
   map_rules: [
-    {
-      url: 'http://t0.tianditu.gov.cn/img_w/wmts?request=GetCapabilities&service=wmts',
-      provider: '天地图',
-      id: '0',
-      label: '天地图-矢量底图',
-      type: 'WMTS',
-      token_browser: 'd9262a81b7661921ef0606542b8d6653',
-      token_server: '',
-      min_zoom: 1,
-      max_zoom: 18,
-      projection: 'EPSG:3857',
-      layer: 'img',
-      matrixSet: 'w'
-    },
-    {
-      url: 'http://example.com',
-      provider: 'Google',
-      id: '1',
-      label: '谷歌',
-      type: 'XYZ',
-      token_browser: 'token1',
-      token_server:
-        'eyJhbGciOiJIUzI1NiJ9.eyJhdWQiOiI0NDdjNTViOS05OTJjLTRlOWUtYmU2OC1iZjdlNDlhYzNlNWQifQ.10VfI2wCxmMa9dCZ51Y_KXexkSXGvfEp4KROFb1odxg',
-      min_zoom: 0,
-      max_zoom: 14,
-      projection: 'EPSG:3857'
-    },
+    // {
+    //   url: 'http://t0.tianditu.gov.cn/img_w/wmts?request=GetCapabilities&service=wmts',
+    //   provider: '天地图',
+    //   id: '0',
+    //   label: '天地图-矢量底图',
+    //   type: 'WMTS',
+    //   token_browser: 'd9262a81b7661921ef0606542b8d6653',
+    //   token_server: '',
+    //   min_zoom: 1,
+    //   max_zoom: 18,
+    //   projection: 'EPSG:3857',
+    //   layer: 'img',
+    //   matrixSet: 'w'
+    // },
+    // {
+    //   url: 'http://example.com',
+    //   provider: 'Google',
+    //   id: '1',
+    //   label: '谷歌',
+    //   type: 'XYZ',
+    //   token_browser: 'token1',
+    //   token_server:
+    //     'eyJhbGciOiJIUzI1NiJ9.eyJhdWQiOiI0NDdjNTViOS05OTJjLTRlOWUtYmU2OC1iZjdlNDlhYzNlNWQifQ.10VfI2wCxmMa9dCZ51Y_KXexkSXGvfEp4KROFb1odxg',
+    //   min_zoom: 0,
+    //   max_zoom: 14,
+    //   projection: 'EPSG:3857'
+    // },
     {
       url: 'https://igss.cgs.gov.cn:6160/igs/rest/ogc/qg20_20210401_FCnDDRJd/WMTSServer',
       provider: 'GeoCloud',

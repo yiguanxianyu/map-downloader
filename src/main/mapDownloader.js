@@ -13,7 +13,7 @@ const requestAgent = axios.create({
   httpsAgent: new https.Agent({ secureOptions: crypto.constants.SSL_OP_LEGACY_SERVER_CONNECT })
 })
 
-axiosRetry(requestAgent, { retries: 16, retryDelay: axiosRetry.exponentialDelay })
+axiosRetry(requestAgent, { retries: 8, retryDelay: axiosRetry.exponentialDelay })
 
 /**
  * Generates an array of numbers within a specified range.
@@ -152,8 +152,12 @@ class datasetHandler {
     this.widthBeforeSubset = this.colRange.length * IMG_SIZE
     this.heightBeforeSubset = this.rowRange.length * IMG_SIZE
 
-    this.canvas = createCanvas(this.widthBeforeSubset, this.heightBeforeSubset)
-    this.ctx = this.canvas.getContext('2d')
+    if (this.widthBeforeSubset * this.heightBeforeSubset > Math.pow(2, 29)) {
+      this.imageTooLarge = true
+    } else {
+      this.canvas = createCanvas(this.widthBeforeSubset, this.heightBeforeSubset)
+      this.ctx = this.canvas.getContext('2d')
+    }
   }
 
   async download(outputPath) {
@@ -211,6 +215,18 @@ class datasetHandler {
       console.error(error)
     }
   }
+
+  checkValid() {
+    const status = { isValid: false, reason: '' }
+
+    if (this.imageTooLarge) {
+      status.reason = 'The image is too large'
+    } else {
+      status.isValid = true
+    }
+
+    return status
+  }
 }
 
 // const main = async (url, tileMatrix, z, minX, minY, maxX, maxY) => {
@@ -225,7 +241,11 @@ class datasetHandler {
 // console.timeEnd('main')
 
 export default (type, url, zoom, extent) => {
+  let mapDownloader
+
   if (type === 'WMTS') {
-    return new datasetHandler(extent, url, zoom)
+    mapDownloader = new datasetHandler(extent, url, zoom)
   }
+
+  return mapDownloader
 }

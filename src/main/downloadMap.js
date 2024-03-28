@@ -1,8 +1,14 @@
 import { execFile } from 'child_process'
 import { app, dialog } from 'electron'
+import os from 'os'
 import path, { join } from 'path'
 
 import getDatasetHandler from './mapDownloader.js'
+import PathManager from './pathManager.js'
+
+const pathManager = new PathManager(os.homedir() + '/inputs.txt', os.homedir() + '/outputs.txt')
+
+let deafultDir = app.getPath('downloads')
 
 const showNote = (type, title, body) => {
   dialog.showMessageBoxSync(null, {
@@ -16,9 +22,9 @@ const showNote = (type, title, body) => {
 }
 
 const getSaveFilePath = (name) => {
-  return dialog.showSaveDialogSync({
-    title: '保存：' + name + '(文件名不支持中文)',
-    defaultPath: join(app.getPath('downloads'), name + '.tif'),
+  const outputPath = dialog.showSaveDialogSync({
+    title: '保存：' + name,
+    defaultPath: join(deafultDir, name + '.tif'),
     filters: [
       {
         name: 'GeoTIFF',
@@ -26,6 +32,25 @@ const getSaveFilePath = (name) => {
       }
     ]
   })
+  if (outputPath !== undefined) {
+    deafultDir = path.dirname(outputPath)
+  }
+  return outputPath
+}
+
+const addOverview = (filePath) => {
+  if (process.platform === 'win32') {
+    execFile(
+      'MHGDALAddo.exe',
+      [filePath],
+      {
+        cwd: join(process.cwd(), '/resources/gdaladdo')
+      },
+      (error, stdout, stderr) => {
+        if (error) throw new Error(error)
+      }
+    )
+  }
 }
 
 const downloadMap = (configs) => {
@@ -42,21 +67,17 @@ const downloadMap = (configs) => {
       const newFilePath = path.join(dir, newFileName)
 
       const handler = getDatasetHandler(config.type, item.url, item.zoom, config.extent)
+      const validStatus = handler.checkValid()
 
-      handler.download(newFilePath).then(() => {
-        if (process.platform === 'win32') {
-          execFile(
-            'MHGDALAddo.exe',
-            [newFilePath],
-            {
-              cwd: join(process.cwd(), '/resources/gdaladdo')
-            },
-            (error, stdout, stderr) => {
-              if (error) throw new Error(error)
-            }
-          )
-        }
-      })
+      if (validStatus.isValid) {
+        pathManager.add(newFilePath)
+        handler.download(newFilePath).then(() => {
+          pathManager.remove(newFilePath)
+          // addOverview(newFilePath)
+        })
+      } else {
+        showNote('info', 'Error', validStatus.reason)
+      }
     }
   })
 }

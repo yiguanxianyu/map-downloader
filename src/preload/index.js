@@ -23,7 +23,6 @@ contextBridge.exposeInMainWorld('electronAPI', {
   downloadMap: (configs) => ipcRenderer.send('download-map', configs),
   onDownloadMap: (callback) => ipcRenderer.on('on-download-map', (_event, value) => callback(value)),
   getUrl: (url) => ipcRenderer.invoke('get-url', url),
-  getCapabilitiesResult: (item) => ipcRenderer.invoke('get-caps-result', item),
   store: {
     set: (key, value) => {
       ipcRenderer.send('setStore', key, value)

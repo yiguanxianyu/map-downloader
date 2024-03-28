@@ -1,12 +1,15 @@
 import { is } from '@electron-toolkit/utils'
 import axios from 'axios'
-import { BrowserWindow, Menu, ipcMain, shell, app } from 'electron'
+import axiosRetry from 'axios-retry'
+import { BrowserWindow, Menu, app, ipcMain, shell } from 'electron'
 import { dirname } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { join } from 'path'
 
 // import icon from '../../resources/icon.png?asset'
 import { downloadMap } from './downloadMap.js'
+
+axiosRetry(axios, { retries: 8, retryDelay: axiosRetry.exponentialDelay })
 
 const _filename = fileURLToPath(import.meta.url)
 const _dirname = dirname(_filename)
@@ -19,7 +22,7 @@ const createWindow = () => {
   // const user = process.argv[2]
 
   // Create the browser window.
-  const mw = new BrowserWindow({
+  mainWindow = new BrowserWindow({
     width: 1200,
     height: 800,
     show: false,
@@ -31,13 +34,11 @@ const createWindow = () => {
     }
   })
 
-  mainWindow = mw
-
-  mw.on('ready-to-show', () => {
-    mw.show()
+  mainWindow.on('ready-to-show', () => {
+    mainWindow.show()
   })
 
-  mw.webContents.setWindowOpenHandler((details) => {
+  mainWindow.webContents.setWindowOpenHandler((details) => {
     shell.openExternal(details.url)
     return { action: 'deny' }
   })
@@ -45,9 +46,9 @@ const createWindow = () => {
   // HMR for renderer base on electron-vite cli.
   // Load the remote URL for development or the local html file for production.
   if (is.dev && process.env['ELECTRON_RENDERER_URL']) {
-    mw.loadURL(process.env['ELECTRON_RENDERER_URL'])
+    mainWindow.loadURL(process.env['ELECTRON_RENDERER_URL'])
   } else {
-    mw.loadFile(join(_dirname, '../renderer/index.html'))
+    mainWindow.loadFile(join(_dirname, '../renderer/index.html'))
   }
 
   Menu.setApplicationMenu(Menu.buildFromTemplate(menuTemplate))
@@ -90,14 +91,10 @@ if (process.platform === 'darwin') {
     label: app.getName(),
     submenu: [
       {
-        label: 'Quit',
-        accelerator: 'CmdOrCtrl+Q',
-        click() {
-          app.quit();
-        }
+        role: 'Quit'
       }
     ]
-  });
+  })
 }
 
 ipcMain.on('download-map', (event, configs) => {
@@ -114,21 +111,4 @@ ipcMain.handle('get-url', async (event, url) => {
   }
 })
 
-ipcMain.handle('get-caps-result', async (event, item) => {
-  const url = item.url
-  const token = item.token_server
-  try {
-    const response = await axios.get(url, {
-      params: {
-        tk: token
-      }
-    })
-    // 处理成功情况
-    return response.data
-  } catch (err) {
-    console.log(err)
-    return -1
-  }
-})
-
-export { createWindow, mainWindow }
+export { createWindow }

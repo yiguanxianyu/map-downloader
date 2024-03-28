@@ -1,5 +1,5 @@
 {
-  "name": "mapdown",
+  "name": "mh-img-down",
   "version": "0.0.1",
   "description": "GeoTIFF downloader based on Electron and Vue",
   "main": "./out/main/index.js",
@@ -30,16 +30,16 @@
   },
   "devDependencies": {
     "@electron-toolkit/eslint-config": "^1.0.2",
-    "@rushstack/eslint-patch": "^1.8.0",
+    "@rushstack/eslint-patch": "^1.9.0",
     "@trivago/prettier-plugin-sort-imports": "^4.3.0",
     "@vitejs/plugin-vue": "^5.0.4",
     "@vue/eslint-config-prettier": "^9.0.0",
     "ajv": "^8.12.0",
-    "electron": "^29.1.5",
+    "electron": "^29.1.6",
     "electron-builder": "^24.13.3",
     "electron-vite": "^2.1.0",
     "eslint": "^8.57.0",
-    "eslint-plugin-vue": "^9.23.0",
+    "eslint-plugin-vue": "^9.24.0",
     "prettier": "^3.2.5",
     "vite": "^5.2.6",
     "vue": "^3.4.21"
