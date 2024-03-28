@@ -2,5 +2,4 @@ node_modules
 dist
 out
 *.log*
-resources/python/runtime
-output.tif
+resources/osgeo
