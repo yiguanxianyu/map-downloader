@@ -21,6 +21,7 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '20'
+          cache: 'pnpm'
 
       - name: Install pnpm
         run: npm install -g pnpm
@@ -28,7 +29,7 @@ jobs:
       - name: Install dependencies
         run: pnpm install
 
-      - name: Build application (installer)
+      - name: Build application (7z)
         run: pnpm build:win
 
       - name: Build application (portable)
@@ -41,4 +42,4 @@ jobs:
           path: |
             dist/*.exe
             dist/*.7z
-          compressionLevel: 0
+          compression-level: 0

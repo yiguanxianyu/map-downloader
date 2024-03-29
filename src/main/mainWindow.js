@@ -1,19 +1,12 @@
 import { is } from '@electron-toolkit/utils'
-import axios from 'axios'
-import axiosRetry from 'axios-retry'
-import { BrowserWindow, Menu, app, ipcMain, shell } from 'electron'
+import { BrowserWindow, Menu, app, shell } from 'electron'
 import { dirname } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { join } from 'path'
 
-// import icon from '../../resources/icon.png?asset'
-import { downloadMap } from './downloadMap.js'
-
-axiosRetry(axios, { retries: 8, retryDelay: axiosRetry.exponentialDelay })
-
 const _filename = fileURLToPath(import.meta.url)
 const _dirname = dirname(_filename)
-const icon = join(_dirname, '../../resources/icon.png')
+const icon = join(_dirname, '../../resources/icon.ico')
 
 let mainWindow
 
@@ -27,7 +20,7 @@ const createWindow = () => {
     height: 800,
     show: false,
     autoHideMenuBar: false,
-    ...(process.platform === 'linux' ? { icon } : {}),
+    icon: icon,
     webPreferences: {
       preload: join(_dirname, '../preload/index.mjs'),
       sandbox: false
@@ -96,19 +89,5 @@ if (process.platform === 'darwin') {
     ]
   })
 }
-
-ipcMain.on('download-map', (event, configs) => {
-  downloadMap(configs)
-})
-
-ipcMain.handle('get-url', async (event, url) => {
-  try {
-    const response = await axios.get(url)
-    // 处理成功情况
-    return response.data
-  } catch {
-    console.log('failed')
-  }
-})
 
 export { createWindow }

@@ -1,8 +1,8 @@
 import { electronApp, optimizer } from '@electron-toolkit/utils'
 import { BrowserWindow, app } from 'electron'
 
+import './ipcMain.js'
 import { createWindow } from './mainWindow.js'
-import './store.js'
 
 // This method will be called when Electron has finished
 // initialization and is ready to create browser windows.

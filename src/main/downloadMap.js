@@ -1,13 +1,20 @@
 import { app, dialog } from 'electron'
+import fs from 'fs'
 import { appendFile } from 'fs/promises'
 import os from 'os'
 import path from 'path'
 
 import getDatasetHandler from './mapDownloader.js'
 
-const finishedFilePath = path.resolve(os.homedir() + '/done.info')
+const finishedFilePath = path.resolve(path.dirname(app.getPath('exe')), 'done.info')
 
 let deafultDir = app.getPath('downloads')
+
+const removeFinished = () => {
+  if (fs.existsSync(finishedFilePath)) {
+    fs.unlinkSync(finishedFilePath)
+  }
+}
 
 const showNote = (type, title, body) => {
   dialog.showMessageBoxSync(null, {
@@ -52,6 +59,10 @@ const getSaveFilePath = (name) => {
 }
 
 const downloadMap = (configs) => {
+  removeFinished()
+
+  const tasks = []
+
   configs.forEach((config) => {
     const originalFilePath = getSaveFilePath(config.name)
     if (originalFilePath === undefined) return
@@ -68,11 +79,17 @@ const downloadMap = (configs) => {
       const validStatus = handler.checkValid()
 
       if (validStatus.isValid) {
-        handler.download(newFilePath).then(() => appendFile(finishedFilePath, newFilePath + os.EOL))
+        const result = handler.download(newFilePath)
+        result.then(() => appendFile(finishedFilePath, newFilePath + os.EOL))
+        tasks.push(result)
       } else {
         showNote('info', 'Error', validStatus.reason)
       }
     }
+  })
+
+  Promise.all(tasks).then(() => {
+    showNote('info', '完成', '下载完成')
   })
 }
 
