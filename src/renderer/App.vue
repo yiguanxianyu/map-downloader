@@ -188,10 +188,12 @@ const handleDownloadMap = async () => {
     const zoomOption = zoomOptions.value[i]
     const row = toRaw(layer)
 
+    const extent = map.getCurrentSelectedExtentForLayer(layer)
+
     const currConfig = {
       name: row.layer,
       type: row.type,
-      extent: map.getCurrentSelectedExtentForLayer(layer),
+      extent: extent,
       urls: []
     }
 

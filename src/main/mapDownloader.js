@@ -77,29 +77,31 @@ const calculateWMTSTileRange = (level, lonmin, latmin, lonmax, latmax) => {
  * @param {number} row - The row index of the tile.
  * @return {Object} An object containing the minimum and maximum longitude and latitude values of the tile extent.
  */
-const calculateWMTSTileExtent = (level, col, row) => {
-  const perTile = 180 / Math.pow(2, level)
-  // 计算经度范围
-  const lonMin = -180 + col * perTile
-  const lonMax = lonMin + perTile
-  const latMax = 90 - row * perTile
-  const latMin = latMax - perTile
+// const calculateWMTSTileExtent = (level, col, row) => {
+//   const perTile = 180 / Math.pow(2, level)
+//   // 计算经度范围
+//   const lonMin = -180 + col * perTile
+//   const lonMax = lonMin + perTile
+//   const latMax = 90 - row * perTile
+//   const latMin = latMax - perTile
 
-  return { lonMin, lonMax, latMin, latMax }
-}
+//   return { lonMin, lonMax, latMin, latMax }
+// }
 
-const calcualteWMTSTilesExtent = (level, tileRange) => {
+const calcualteWMTSTilesExtent = (z, tileRange) => {
   const colRange = tileRange.colRange
   const rowRange = tileRange.rowRange
-  const upperLeftCoords = calculateWMTSTileExtent(level, colRange.at(0), rowRange.at(0))
-  const lowerRightCoords = calculateWMTSTileExtent(level, colRange.at(-1), rowRange.at(-1))
+  // const upperLeftCoords = calculateWMTSTileExtent(z, colRange.at(0), rowRange.at(0))
+  // const lowerRightCoords = calculateWMTSTileExtent(z, colRange.at(-1), rowRange.at(-1))
 
-  return {
-    latMin: lowerRightCoords.latMin,
-    latMax: upperLeftCoords.latMax,
-    lonMin: upperLeftCoords.lonMin,
-    lonMax: lowerRightCoords.lonMax
-  }
+  const perTile = 180 / Math.pow(2, z)
+  // 计算经度范围
+  const lonMin = -180 + colRange.at(0) * perTile
+  const latMax = 90 - rowRange.at(0) * perTile
+  const lonMax = -180 + (colRange.at(-1) + 1) * perTile
+  const latMin = 90 - (rowRange.at(-1) + 1) * perTile
+
+  return { latMin, latMax, lonMin, lonMax }
 }
 
 /**
@@ -127,12 +129,11 @@ const calculateUintPerPixel = (boundingBox, width, height) => {
  * @return {Array} An array of window coordinates [startX, startY, width, height].
  */
 const destCoords2Window = (destCoords, boundingBox, unitLngPerPixel, unitLatPerPixel) => {
-  //startY is larger than endY
-  const startX = Math.floor((destCoords[0] - boundingBox.lonMin) / unitLngPerPixel)
-  const startY = Math.floor((destCoords[1] - boundingBox.latMin) / unitLatPerPixel)
+  const startX = Math.round((destCoords[0] - boundingBox.lonMin) / unitLngPerPixel)
+  const startY = Math.round((boundingBox.latMax - destCoords[3]) / unitLatPerPixel)
 
-  const width = Math.floor((destCoords[2] - destCoords[0]) / unitLngPerPixel)
-  const height = Math.floor((destCoords[3] - destCoords[1]) / unitLatPerPixel)
+  const width = Math.round((destCoords[2] - destCoords[0]) / unitLngPerPixel)
+  const height = Math.round((destCoords[3] - destCoords[1]) / unitLatPerPixel)
 
   return [startX, startY, width, height]
 }
@@ -141,10 +142,10 @@ class datasetHandler {
   constructor(destCoords, url, z) {
     this.destCoords = destCoords //[minX, minY, maxX, maxY], range after subset
     this.tileCoords = calculateWMTSTileRange(z, ...destCoords)
-    this.coordsRange = calcualteWMTSTilesExtent(z, this.tileCoords) //range before subset
-
     this.colRange = this.tileCoords.colRange
     this.rowRange = this.tileCoords.rowRange
+
+    this.coordsRange = calcualteWMTSTilesExtent(z, this.tileCoords) //range before subset
 
     this.url = url.url
     this.params = url.params

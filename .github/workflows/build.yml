@@ -28,14 +28,17 @@ jobs:
       - name: Install dependencies
         run: pnpm install
 
-      - name: Build application
+      - name: Build application (installer)
         run: pnpm build:win
 
-      - name: Build application
+      - name: Build application (portable)
         run: pnpm build:portable
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
           name: windows-app
-          path: dist/*.exe
+          path: |
+            dist/*.exe
+            dist/*.7z
+          compressionLevel: 0
