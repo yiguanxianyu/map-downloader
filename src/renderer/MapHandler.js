@@ -4,7 +4,6 @@ import View from 'ol/View'
 import Attribution from 'ol/control/Attribution'
 import Zoom from 'ol/control/Zoom'
 import { shiftKeyOnly } from 'ol/events/condition.js'
-import WMTSCapabilities from 'ol/format/WMTSCapabilities.js'
 import Extent from 'ol/interaction/Extent'
 import LayerGroup from 'ol/layer/Group'
 import TileLayer from 'ol/layer/Tile'
@@ -24,19 +23,13 @@ const tiandituLayer = new TileLayer({
   })
 })
 
-const getWMTSCaps = (response_data) => {
-  const parser = new WMTSCapabilities()
-  const result = parser.read(response_data)
-  return result
-}
-
 class MapHandler {
   constructor() {
     this.customLayer = new Collection([]) // 当前显示的图层
 
     this.view = new View({
-      center: [12000000, 5000000],
-      zoom: 4,
+      center: [12000000, 4000000],
+      zoom: 5,
       maxZoom: 18,
       extent: transformExtent([60, 0, 150, 60], 'EPSG:4326', 'EPSG:3857')
     })
@@ -101,7 +94,9 @@ class MapHandler {
   }
 
   setCurrentViewAsExtent() {
-    this.draw.setExtent(this.currentViewExtent)
+    const mapSize = this.map.getSize()
+    const extent = this.view.calculateExtent(mapSize)
+    this.draw.setExtent(extent)
   }
 
   async changeCurrentLayer(mapConfig) {
