@@ -1,8 +1,10 @@
 import { is } from '@electron-toolkit/utils'
-import { BrowserWindow, Menu, app, shell } from 'electron'
+import { BrowserWindow, Menu, app, dialog, shell } from 'electron'
+import fs from 'node:fs'
 import { dirname } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { join } from 'path'
+import shp from 'shpjs'
 
 const _filename = fileURLToPath(import.meta.url)
 const _dirname = dirname(_filename)
@@ -64,8 +66,24 @@ const menuTemplate = [
         }
       },
       {
-        label: '从shp读取范围',
-        enabled: false
+        label: '从shp-zip文件读取范围(仅EPSG:4326)',
+        click: () => {
+          const result = dialog.showOpenDialogSync({
+            title: '选择文件',
+            filters: [
+              { name: 'Zip Files', extensions: ['zip'] },
+              { name: 'GeoJSON Files', extensions: ['geojson'] }
+            ],
+            properties: ['openFile']
+          })
+
+          if (result !== undefined) {
+            fs.readFile(result[0], async (err, data) => {
+              const geojson = await shp(data)
+              mainWindow.webContents.send('set-extent-from-shp', geojson)
+            })
+          }
+        }
       },
       {
         label: '按住shift在地图上勾画范围',

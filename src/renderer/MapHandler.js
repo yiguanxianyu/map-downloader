@@ -11,6 +11,7 @@ import 'ol/ol.css'
 import { transformExtent } from 'ol/proj'
 import XYZ from 'ol/source/XYZ'
 import { Fill, Stroke, Style } from 'ol/style.js'
+import shp from 'shpjs'
 
 import { getMapProvier } from './mapSourceConfigHandler'
 
@@ -96,6 +97,12 @@ class MapHandler {
   setCurrentViewAsExtent() {
     const mapSize = this.map.getSize()
     const extent = this.view.calculateExtent(mapSize)
+    this.draw.setExtent(extent)
+  }
+
+  async readShp(geojson) {
+    const extent_3857 = geojson.features[0].geometry.bbox
+    const extent = transformExtent(extent_3857, 'EPSG:4326', 'EPSG:3857')
     this.draw.setExtent(extent)
   }
 

@@ -21,7 +21,8 @@ if (process.contextIsolated) {
 
 contextBridge.exposeInMainWorld('electronAPI', {
   downloadMap: (configs) => ipcRenderer.send('download-map', configs),
-  onDownloadMap: (callback) => ipcRenderer.on('on-download-map', (_event, value) => callback(value)),
+  onDownloadMap: (callback) => ipcRenderer.on('on-download-map', (_event) => callback()),
+  onReadShp: (callback) => ipcRenderer.on('set-extent-from-shp', (_event, geojson) => callback(geojson)),
   getUrl: (url) => ipcRenderer.invoke('get-url', url),
   store: {
     set: (key, value) => {

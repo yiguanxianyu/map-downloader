@@ -165,8 +165,7 @@ window.electronAPI.onDownloadMap(() => {
   zoomOptions.value = []
 
   //获取可下载的缩放等级的公共部分
-  for (let i = 0; i < selectedLayers.length; i++) {
-    const layer = selectedLayers[i]
+  for (let layer of selectedLayers) {
     zoomOptions.value.push({
       id: layer.id,
       label: layer.label,
@@ -175,6 +174,11 @@ window.electronAPI.onDownloadMap(() => {
     })
   }
   dialogDownloadMapVisible.value = true
+})
+
+//读取shp
+window.electronAPI.onReadShp((path) => {
+  map.readShp(path)
 })
 
 //下载地图
