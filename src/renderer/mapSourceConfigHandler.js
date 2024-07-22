@@ -189,6 +189,9 @@ class geocloudWMTSProvider extends wmtsProvider {
       layer: this.layer,
       matrixSet: this.tileMatrixSet
     })
+    //This solves 100w url issue
+    options.urls[0] = options.urls[0].replace('http://igss_6163:80', 'https://igss.cgs.gov.cn:6160')
+
     options.urls[0] += 'tk=' + this.token_browser
     options.tileGrid = new WMTSTileGrid({
       origins: options.tileGrid.origins_, //原点(左上角)
@@ -225,7 +228,7 @@ const getMapProvier = async (mapConfig) => {
         mapProvider = new geocloudWMTSProvider(mapConfig)
         break
       default:
-        options = new wmtsProvider(mapConfig)
+        mapProvider = new wmtsProvider(mapConfig)
     }
   } else if (mapConfig.type === 'XYZ') {
     mapProvider = new xyzProvider(mapConfig)
