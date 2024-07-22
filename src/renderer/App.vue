@@ -9,8 +9,8 @@
           show-checkbox
           draggable
           :allow-drop="allowDrop"
-          @current-change="handleLayerSelectChange"
           highlight-current
+          @current-change="handleLayerSelectChange"
         >
           <template #default="{ node, data }">
             <span class="custom-tree-node">
@@ -20,9 +20,9 @@
           </template>
         </el-tree>
 
-        <div style="margin-bottom: 20px">
-          <el-button @click="">Add</el-button>
-        </div>
+        <!-- <div style="margin-bottom: 20px">
+          <el-button>Add</el-button>
+        </div> -->
       </div>
       <div id="map" />
     </div>
@@ -74,12 +74,12 @@
             <el-option label="EPSG:3857 (Web Mercator)" value="EPSG:3857" />
           </el-select>
         </el-form-item>
-        <el-form-item label="图层名" v-if="mapInfoForm.type === 'WMTS'">
+        <el-form-item v-if="mapInfoForm.type === 'WMTS'" label="图层名">
           <el-select v-model="mapInfoForm.layer">
             <el-option v-for="(_, index) in layerInfo" :label="index" :value="index" />
           </el-select>
         </el-form-item>
-        <el-form-item label="矩阵集" v-if="mapInfoForm.type === 'WMTS'">
+        <el-form-item v-if="mapInfoForm.type === 'WMTS'" label="矩阵集">
           <el-select v-model="mapInfoForm.matrixSet">
             <el-option v-for="(_, index) in layerInfo[mapInfoForm.layer]" :label="index" :value="index" />
           </el-select>

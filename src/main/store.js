@@ -109,6 +109,76 @@ const config = {
       projection: 'EPSG:4326',
       layer: 'qg250w_20210416_ZAZSeOGX',
       matrixSet: 'EPSG:4326_qg250w_20210416_ZAZSeOGX_028mm_GB'
+    },
+    {
+      url: '',
+      provider: '',
+      id: '6',
+      label: '',
+      type: 'WMTS',
+      token_browser: '',
+      token_server: '',
+      min_zoom: 0,
+      max_zoom: 14,
+      projection: '',
+      layer: '',
+      matrixSet: ''
+    },
+    {
+      url: '',
+      provider: '',
+      id: '7',
+      label: '',
+      type: 'WMTS',
+      token_browser: '',
+      token_server: '',
+      min_zoom: 0,
+      max_zoom: 14,
+      projection: '',
+      layer: '',
+      matrixSet: ''
+    },
+    {
+      url: '',
+      provider: '',
+      id: '8',
+      label: '',
+      type: 'WMTS',
+      token_browser: '',
+      token_server: '',
+      min_zoom: 0,
+      max_zoom: 14,
+      projection: '',
+      layer: '',
+      matrixSet: ''
+    },
+    {
+      url: '',
+      provider: '',
+      id: '9',
+      label: '',
+      type: 'WMTS',
+      token_browser: '',
+      token_server: '',
+      min_zoom: 0,
+      max_zoom: 14,
+      projection: '',
+      layer: '',
+      matrixSet: ''
+    },
+    {
+      url: '',
+      provider: '',
+      id: '10',
+      label: '',
+      type: 'WMTS',
+      token_browser: '',
+      token_server: '',
+      min_zoom: 0,
+      max_zoom: 14,
+      projection: '',
+      layer: '',
+      matrixSet: ''
     }
   ]
 }
