@@ -33,7 +33,7 @@ const config = {
     {
       url: 'https://igss.cgs.gov.cn:6160/igs/rest/ogc/qg20_20210401_FCnDDRJd/WMTSServer',
       provider: 'GeoCloud',
-      id: '2',
+      id: '1',
       label: '全国1:20万地质图-地质云',
       type: 'WMTS',
       token_browser:
@@ -49,7 +49,7 @@ const config = {
     {
       url: 'https://igss.cgs.gov.cn:6160/igs/rest/ogc/qg50w_20210416_F7qGy9A7/WMTSServer',
       provider: 'GeoCloud',
-      id: '3',
+      id: '2',
       label: '全国1:50万地质图-地质云',
       type: 'WMTS',
       token_browser:
@@ -65,7 +65,7 @@ const config = {
     {
       url: 'https://igss.cgs.gov.cn:6160/igs/rest/ogc/全国100万地质图_20210330_rpam5kdJ/WMTSServer',
       provider: 'GeoCloud',
-      id: '4',
+      id: '3',
       label: '全国1:100万地质图-地质云',
       type: 'WMTS',
       token_browser:
@@ -81,7 +81,7 @@ const config = {
     {
       url: 'https://igss.cgs.gov.cn:6160/igs/rest/ogc/qg150w_20210416_BIwqE0wU/WMTSServer',
       provider: 'GeoCloud',
-      id: '5',
+      id: '4',
       label: '全国1:150万地质图-地质云',
       type: 'WMTS',
       token_browser:
@@ -97,7 +97,7 @@ const config = {
     {
       url: 'https://igss.cgs.gov.cn:6160/igs/rest/ogc/qg250w_20210416_ZAZSeOGX/WMTSServer',
       provider: 'GeoCloud',
-      id: '6',
+      id: '5',
       label: '全国1:250万地质图-地质云',
       type: 'WMTS',
       token_browser:
@@ -242,12 +242,14 @@ const store = new Store({ schema })
 // console.log('clear', electronStore.clear()) // 清除所有store数据
 // console.log('has', electronStore.has()) // 检测是否存在某条数据
 
-// if (!store.get('first')) {
-//   // 第一次打开软件时，初始化数据
-//   store.set('map_rules', config.map_rules)
-//   store.set('first', true)
-// }
-store.set('map_rules', config.map_rules)
+if (!store.get('first')) {
+  // 第一次打开软件时，初始化数据
+  store.set('map_rules', config.map_rules)
+  store.set('first', true)
+}
+
+// 测试用
+// store.set('map_rules', config.map_rules)
 
 // 定义ipc监听事件
 ipcMain.on('setStore', (_, key, value) => {

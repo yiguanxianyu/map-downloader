@@ -11,7 +11,6 @@ import 'ol/ol.css'
 import { transformExtent } from 'ol/proj'
 import XYZ from 'ol/source/XYZ'
 import { Fill, Stroke, Style } from 'ol/style.js'
-import shp from 'shpjs'
 
 import { getMapProvier } from './mapSourceConfigHandler'
 

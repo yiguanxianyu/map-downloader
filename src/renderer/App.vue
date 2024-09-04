@@ -30,7 +30,7 @@
     <!-- 设置下载的界面 -->
     <el-dialog v-model="dialogDownloadMapVisible" title="下载地图">
       <el-form label-position="top" label-width="100px" :model="zoomOptions">
-        <el-form-item v-for="item in zoomOptions" :label="item.label" style="width: 100%">
+        <el-form-item v-for="item in zoomOptions" :key="item" :label="item.label" style="width: 100%">
           <el-select v-model="item.selectedZoom" multiple>
             <el-option v-for="i in item.zoomNumbers" :key="i" :label="i" :value="i" />
           </el-select>
@@ -45,27 +45,33 @@
     </el-dialog>
 
     <!-- 编辑地图配置的界面 -->
-    <el-dialog v-model="dialogConfigVisible" title="配置地图">
+    <el-dialog
+      v-model="dialogConfigVisible"
+      title="配置地图"
+      :close-on-click-modal="false"
+      :close-on-press-escape="false"
+      :show-close="false"
+    >
       <el-form :model="mapInfoForm" label-width="120px">
         <el-form-item label="地图名">
           <el-input v-model="mapInfoForm.label" />
         </el-form-item>
         <el-form-item label="URL">
-          <el-input v-model="mapInfoForm.url" />
+          <el-input v-model="mapInfoForm.url" @change="onFormInputChanged" />
         </el-form-item>
         <el-form-item label="浏览器端token">
-          <el-input v-model="mapInfoForm.token_browser" />
+          <el-input v-model="mapInfoForm.token_browser" @change="onFormInputChanged" />
         </el-form-item>
         <el-form-item label="服务器端token">
-          <el-input v-model="mapInfoForm.token_server" />
+          <el-input v-model="mapInfoForm.token_server" @change="onFormInputChanged" />
         </el-form-item>
         <el-form-item label="服务提供商">
-          <el-input v-model="mapInfoForm.provider" />
+          <el-input v-model="mapInfoForm.provider" @change="onFormInputChanged" />
         </el-form-item>
         <el-form-item label="瓦片类型">
           <el-select v-model="mapInfoForm.type" placeholder="瓦片类型">
             <el-option label="WMTS" value="WMTS" />
-            <el-option label="XYZ" value="XYZ" />
+            <!-- <el-option label="XYZ" value="XYZ" /> -->
           </el-select>
         </el-form-item>
         <el-form-item label="投影">
@@ -76,18 +82,18 @@
         </el-form-item>
         <el-form-item v-if="mapInfoForm.type === 'WMTS'" label="图层名">
           <el-select v-model="mapInfoForm.layer">
-            <el-option v-for="(_, index) in layerInfo" :label="index" :value="index" />
+            <el-option v-for="(_, index) in layerInfo" :key="index" :label="index" :value="index" />
           </el-select>
         </el-form-item>
         <el-form-item v-if="mapInfoForm.type === 'WMTS'" label="矩阵集">
           <el-select v-model="mapInfoForm.matrixSet">
-            <el-option v-for="(_, index) in layerInfo[mapInfoForm.layer]" :label="index" :value="index" />
+            <el-option v-for="(_, index) in layerInfo[mapInfoForm.layer]" :key="index" :label="index" :value="index" />
           </el-select>
         </el-form-item>
       </el-form>
       <template #footer>
         <span class="dialog-footer">
-          <el-button @click="dialogConfigVisible = false">取消</el-button>
+          <el-button @click="handleCancelMapConfig">取消</el-button>
           <el-button type="primary" @click="handleUpdateMapConfig"> 确认 </el-button>
         </span>
       </template>
@@ -97,7 +103,7 @@
 
 <script setup>
 import { ElMessage } from 'element-plus'
-import { onMounted, ref, toRaw } from 'vue'
+import { onMounted, ref, toRaw, unref } from 'vue'
 
 import { MapHandler } from './MapHandler'
 
@@ -115,20 +121,20 @@ const allowDrop = (draggingNode, dropNode, type) => {
 
 //点击时改变图层
 const handleLayerSelectChange = (newItem) => {
+  if (!newItem.url) {
+    return
+  }
   if (newItem) {
-    map.changeCurrentLayer(toRaw(newItem))
+    map.changeCurrentLayer(unref(newItem))
   }
 }
 //编辑图层信息
 const layerInfo = ref([])
 
 const handleEdit = async (item) => {
+  item = JSON.parse(JSON.stringify(item))
   mapInfoForm.value = item
   dialogConfigVisible.value = true
-
-  if (item.type === 'WMTS') {
-    layerInfo.value = await map.getWMTSLayerInfo(toRaw(item))
-  }
 }
 
 /***************
@@ -137,9 +143,30 @@ const handleEdit = async (item) => {
 const mapInfoForm = ref({}) // 编辑地图信息
 const dialogConfigVisible = ref(false) // 展示编辑地图信息的dialog
 
+const onFormInputChanged = async () => {
+  const info = unref(mapInfoForm)
+
+  if (info.provider === 'GeoCloud') {
+    if (info.url && info.token_server && info.token_browser) {
+      layerInfo.value = await map.getWMTSLayerInfo(info)
+    }
+  }
+}
+
 const handleUpdateMapConfig = () => {
+  const mapIndex = mapTableData.value.findIndex((item) => item.id === mapInfoForm.value.id)
+
+  if (mapIndex !== -1) {
+    // 更新 mapTableData 中的对应地图条目
+    mapTableData.value[mapIndex] = mapInfoForm.value
+  }
+
   store.set('map_rules', toRaw(mapTableData.value))
-  map.changeCurrentLayer(toRaw(mapInfoForm.value))
+  dialogConfigVisible.value = false
+}
+
+const handleCancelMapConfig = () => {
+  mapInfoForm.value = {}
   dialogConfigVisible.value = false
 }
 

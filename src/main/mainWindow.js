@@ -1,10 +1,8 @@
 import { is } from '@electron-toolkit/utils'
-import { BrowserWindow, Menu, app, dialog, shell } from 'electron'
-import fs from 'node:fs'
+import { BrowserWindow, Menu, app, shell } from 'electron'
 import { dirname } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { join } from 'path'
-import shp from 'shpjs'
 
 const _filename = fileURLToPath(import.meta.url)
 const _dirname = dirname(_filename)

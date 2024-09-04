@@ -13,16 +13,16 @@ class baseProvider {
   constructor(config) {
     Object.assign(this, config)
 
-    this.url = config.url
-    this.token_browser = config.token_browser
-    this.token_server = config.token_server
-    this.projection = config.projection
-    this.label = config.label
-    this.id = config.id
-    this.min_zoom = config.min_zoom
-    this.max_zoom = config.max_zoom
-    this.provider = config.provider
-    this.type = config.type
+    // this.url = config.url
+    // this.token_browser = config.token_browser
+    // this.token_server = config.token_server
+    // this.projection = config.projection
+    // this.label = config.label
+    // this.id = config.id
+    // this.min_zoom = config.min_zoom
+    // this.max_zoom = config.max_zoom
+    // this.provider = config.provider
+    // this.type = config.type
   }
 }
 
@@ -36,9 +36,10 @@ class wmtsProvider extends baseProvider {
     this.wmts_layer_info = null
   }
   async initialize() {
+    if (this.capabilities) return
     await this.getCapabilities()
-    this.getOptions()
     this.getWMTSLayerInfo()
+    this.getOptions()
   }
   getWMTSConfig() {
     throw new Error('Not Implemented')
@@ -185,6 +186,10 @@ class geocloudWMTSProvider extends wmtsProvider {
   }
 
   getOptions() {
+    if (!this.layer) {
+      this.layer = Object.keys(this.wmts_layer_info)[0]
+      this.tileMatrixSet = Object.keys(this.wmts_layer_info[this.layer])[0]
+    }
     const options = optionsFromCapabilities(this.capabilities, {
       layer: this.layer,
       matrixSet: this.tileMatrixSet
