@@ -4,13 +4,14 @@
       <div id="sidebar">
         <el-tree
           ref="treeRef"
-          style="width: 100%"
           :data="mapTableData"
+          style="width: 100%"
           show-checkbox
           draggable
           :allow-drop="allowDrop"
           highlight-current
           @current-change="handleLayerSelectChange"
+          @node-drop="handleDrop"
         >
           <template #default="{ node, data }">
             <span class="custom-tree-node">
@@ -71,7 +72,8 @@
         <el-form-item label="瓦片类型">
           <el-select v-model="mapInfoForm.type" placeholder="瓦片类型">
             <el-option label="WMTS" value="WMTS" />
-            <!-- <el-option label="XYZ" value="XYZ" /> -->
+            <el-option label="WMS" value="WMS" />
+            <el-option label="WFS" value="WFS" />
           </el-select>
         </el-form-item>
         <el-form-item label="投影">
@@ -113,7 +115,11 @@ const store = window.electronAPI.store // 全局存储
  * 图层部分
  ***************/
 const treeRef = ref() // 树的引用
-const mapTableData = ref(store.get('map_rules')) // 地图列表
+const mapTableData = ref() // 地图列表
+
+store.get('map_rules').then((res) => {
+  mapTableData.value = res
+})
 
 const allowDrop = (draggingNode, dropNode, type) => {
   return type !== 'inner'
@@ -128,11 +134,21 @@ const handleLayerSelectChange = (newItem) => {
     map.changeCurrentLayer(unref(newItem))
   }
 }
+
+const handleDrop = () => store.set('map_rules', toRaw(mapTableData.value))
+
 //编辑图层信息
 const layerInfo = ref([])
 
-const handleEdit = async (item) => {
+const handleEdit = (item) => {
   item = JSON.parse(JSON.stringify(item))
+
+  if (item.url && item.token_server) {
+    map.getWMTSLayerInfo(item).then((res) => {
+      layerInfo.value = res
+    })
+  }
+
   mapInfoForm.value = item
   dialogConfigVisible.value = true
 }
@@ -143,12 +159,14 @@ const handleEdit = async (item) => {
 const mapInfoForm = ref({}) // 编辑地图信息
 const dialogConfigVisible = ref(false) // 展示编辑地图信息的dialog
 
-const onFormInputChanged = async () => {
+const onFormInputChanged = () => {
   const info = unref(mapInfoForm)
 
   if (info.provider === 'GeoCloud') {
-    if (info.url && info.token_server && info.token_browser) {
-      layerInfo.value = await map.getWMTSLayerInfo(info)
+    if (info.url && info.token_server) {
+      map.getWMTSLayerInfo(info).then((res) => {
+        layerInfo.value = res
+      })
     }
   }
 }
@@ -200,6 +218,7 @@ window.electronAPI.onDownloadMap(() => {
       selectedZoom: [Math.max(Math.min(layer.max_zoom, map.currentZoom), layer.min_zoom)] //中位数
     })
   }
+
   dialogDownloadMapVisible.value = true
 })
 
@@ -223,6 +242,7 @@ const handleDownloadMap = async () => {
 
     const currConfig = {
       name: row.layer,
+      label: row.label,
       type: row.type,
       extent: extent,
       urls: []

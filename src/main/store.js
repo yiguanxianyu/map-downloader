@@ -3,33 +3,6 @@ import Store from 'electron-store'
 
 const config = {
   map_rules: [
-    // {
-    //   url: 'http://t0.tianditu.gov.cn/img_w/wmts?request=GetCapabilities&service=wmts',
-    //   provider: '天地图',
-    //   id: '0',
-    //   label: '天地图-矢量底图',
-    //   type: 'WMTS',
-    //   token_browser: 'd9262a81b7661921ef0606542b8d6653',
-    //   token_server: '',
-    //   min_zoom: 1,
-    //   max_zoom: 18,
-    //   projection: 'EPSG:3857',
-    //   layer: 'img',
-    //   matrixSet: 'w'
-    // },
-    // {
-    //   url: 'http://example.com',
-    //   provider: 'Google',
-    //   id: '1',
-    //   label: '谷歌',
-    //   type: 'XYZ',
-    //   token_browser: 'token1',
-    //   token_server:
-    //     'eyJhbGciOiJIUzI1NiJ9.eyJhdWQiOiI0NDdjNTViOS05OTJjLTRlOWUtYmU2OC1iZjdlNDlhYzNlNWQifQ.10VfI2wCxmMa9dCZ51Y_KXexkSXGvfEp4KROFb1odxg',
-    //   min_zoom: 0,
-    //   max_zoom: 14,
-    //   projection: 'EPSG:3857'
-    // },
     {
       url: 'https://igss.cgs.gov.cn:6160/igs/rest/ogc/qg20_20210401_FCnDDRJd/WMTSServer',
       provider: 'GeoCloud',
@@ -180,6 +153,33 @@ const config = {
       layer: '',
       matrixSet: ''
     }
+    // {
+    //   url: 'http://t0.tianditu.gov.cn/img_w/wmts?request=GetCapabilities&service=wmts',
+    //   provider: '天地图',
+    //   id: '0',
+    //   label: '天地图-矢量底图',
+    //   type: 'WMTS',
+    //   token_browser: 'd9262a81b7661921ef0606542b8d6653',
+    //   token_server: '',
+    //   min_zoom: 1,
+    //   max_zoom: 18,
+    //   projection: 'EPSG:3857',
+    //   layer: 'img',
+    //   matrixSet: 'w'
+    // },
+    // {
+    //   url: 'http://example.com',
+    //   provider: 'Google',
+    //   id: '1',
+    //   label: '谷歌',
+    //   type: 'XYZ',
+    //   token_browser: 'token1',
+    //   token_server:
+    //     'eyJhbGciOiJIUzI1NiJ9.eyJhdWQiOiI0NDdjNTViOS05OTJjLTRlOWUtYmU2OC1iZjdlNDlhYzNlNWQifQ.10VfI2wCxmMa9dCZ51Y_KXexkSXGvfEp4KROFb1odxg',
+    //   min_zoom: 0,
+    //   max_zoom: 14,
+    //   projection: 'EPSG:3857'
+    // },
   ]
 }
 
@@ -232,22 +232,18 @@ const schema = {
   }
 }
 
-const store = new Store({ schema })
-// console.log('size', electronStore.size) // 获取项目总个数
-// console.log('path', electronStore.path) // 获取存储文件的路径
-// console.log('store', electronStore.store) // 获取所有数据作为对象或将当前数据替换为对象
-// console.log('set', electronStore.set()) // 存储数据
-// console.log('get', electronStore.get()) // 获取数据
-// console.log('delete', electronStore.delete()) // 删除某项数据
-// console.log('clear', electronStore.clear()) // 清除所有store数据
-// console.log('has', electronStore.has()) // 检测是否存在某条数据
-
-if (!store.get('first')) {
-  // 第一次打开软件时，初始化数据
-  store.set('map_rules', config.map_rules)
-  store.set('first', true)
+const initialize = (currStore) => {
+  currStore.set('map_rules', config.map_rules)
+  currStore.set('NOT_FIRST_RUN_FLAG', true)
+  currStore.set('LOG_FILE_PATH', 'c:/Users/xianyu/Documents/Source/dzy-electron-vue/src/main/log.txt')
 }
 
+const store = new Store({ schema })
+
+if (!store.has('NOT_FIRST_RUN_FLAG')) {
+  // 第一次打开软件时，初始化数据
+  initialize(store)
+}
 // 测试用
 // store.set('map_rules', config.map_rules)
 
@@ -256,9 +252,8 @@ ipcMain.on('setStore', (_, key, value) => {
   store.set(key, value)
 })
 
-ipcMain.on('getStore', (_, key) => {
-  let value = store.get(key)
-  _.returnValue = value || ''
+ipcMain.handle('getStore', (_, key) => {
+  return store.get(key) || ''
 })
 
 export default store

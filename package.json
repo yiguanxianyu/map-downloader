@@ -24,6 +24,7 @@
     "@napi-rs/canvas": "^0.1.54",
     "axios": "^1.7.7",
     "axios-retry": "^4.5.0",
+    "electron-log": "^5.1.7",
     "electron-store": "^8.2.0",
     "element-plus": "^2.8.1",
     "geotiff": "^2.1.3",

@@ -4,6 +4,7 @@ import { appendFile } from 'fs/promises'
 import os from 'os'
 import path from 'path'
 
+import logger from './log_custom.js'
 import getDatasetHandler from './mapDownloader.js'
 
 const finishedFilePath = path.resolve(path.dirname(app.getPath('exe')), 'done.info')
@@ -43,7 +44,7 @@ function getCurrentTimestampFormatted() {
 const getSaveFilePath = (name) => {
   const timeStamp = getCurrentTimestampFormatted()
   const outputPath = dialog.showSaveDialogSync({
-    title: '保存：' + name,
+    title: '保存：' + name + String.raw`（文件名中不能包含<>:"/\|?*）`,
     defaultPath: path.join(deafultDir, name + '_' + timeStamp + '.tif'),
     filters: [
       {
@@ -64,7 +65,7 @@ const downloadMap = (configs) => {
   const tasks = []
 
   configs.forEach((config) => {
-    const originalFilePath = getSaveFilePath(config.name)
+    const originalFilePath = getSaveFilePath(config.name) // 改为config.name使用图层标签命名，当前使用图层名
     if (originalFilePath === undefined) return
 
     const dir = path.dirname(originalFilePath)
@@ -79,8 +80,14 @@ const downloadMap = (configs) => {
       const validStatus = handler.checkValid()
 
       if (validStatus.isValid) {
+        logger.info(`Start download: ${newFileName}`)
+
         const result = handler.download(newFilePath)
-        result.then(() => appendFile(finishedFilePath, newFilePath + os.EOL))
+        result.then(() => {
+          appendFile(finishedFilePath, newFilePath + os.EOL)
+          logger.info(`Download finished: ${newFileName}`)
+        })
+
         tasks.push(result)
       } else {
         showNote('info', 'Error', validStatus.reason)
@@ -88,9 +95,14 @@ const downloadMap = (configs) => {
     }
   })
 
-  Promise.all(tasks).then(() => {
-    showNote('info', '完成', '下载完成')
-  })
+  if (tasks.length === 0) {
+    showNote('info', 'Error', '用户取消')
+    return
+  } else {
+    Promise.all(tasks).then(() => {
+      showNote('info', '完成', '下载完成')
+    })
+  }
 }
 
 export { downloadMap }

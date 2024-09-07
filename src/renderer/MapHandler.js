@@ -40,6 +40,7 @@ class MapHandler {
       controls: [new Zoom(), new Attribution()]
     })
 
+    // 在地图上绘制范围
     this.draw = new Extent({
       condition: shiftKeyOnly,
       boxStyle: new Style({

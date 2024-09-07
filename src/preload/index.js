@@ -20,17 +20,17 @@ if (process.contextIsolated) {
 }
 
 contextBridge.exposeInMainWorld('electronAPI', {
-  downloadMap: (configs) => ipcRenderer.send('download-map', configs),
-  onDownloadMap: (callback) => ipcRenderer.on('on-download-map', (_event) => callback()),
+  onDownloadMap: (callback) => ipcRenderer.on('on-download-map', () => callback()),
   onReadShp: (callback) => ipcRenderer.on('set-extent-from-shp', (_event, geojson) => callback(geojson)),
   getUrl: (url) => ipcRenderer.invoke('get-url', url),
+  downloadMap: (configs) => ipcRenderer.send('download-map', configs),
+  log: (type, msg) => ipcRenderer.send('log', { type, msg }),
   store: {
     set: (key, value) => {
       ipcRenderer.send('setStore', key, value)
     },
     get: (key) => {
-      const resp = ipcRenderer.sendSync('getStore', key)
-      return resp
+      return ipcRenderer.invoke('getStore', key)
     }
   },
   extent: {

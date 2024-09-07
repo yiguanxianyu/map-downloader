@@ -23,7 +23,8 @@ const createWindow = () => {
     icon: icon,
     webPreferences: {
       preload: join(_dirname, '../preload/index.mjs'),
-      sandbox: false
+      sandbox: false,
+      devTools: false // 禁用开发者工具
     }
   })
 

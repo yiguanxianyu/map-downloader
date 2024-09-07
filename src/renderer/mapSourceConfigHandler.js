@@ -50,7 +50,7 @@ class wmtsProvider extends baseProvider {
   async getOptions() {
     throw new Error('Not Implemented')
   }
-  async getTileUrl(tileMatrix) {
+  async getTileUrl() {
     throw new Error('Not Implemented')
   }
   exportWMTSLayerConfig() {
@@ -209,20 +209,32 @@ class geocloudWMTSProvider extends wmtsProvider {
   }
 }
 
-class xyzProvider extends baseProvider {
+class wmsProvider extends baseProvider {
   constructor(config) {
     super(config)
   }
 }
 
-class tiandituProvider extends xyzProvider {
-  constructor(config) {
-    super(config)
-  }
-  getUrl() {
-    return this.url.replace('{token}', this.token_browser)
-  }
-}
+// class wfsProvider extends baseProvider {
+//   constructor(config) {
+//     super(config)
+//   }
+// }
+
+// class xyzProvider extends baseProvider {
+//   constructor(config) {
+//     super(config)
+//   }
+// }
+
+// class tiandituProvider extends xyzProvider {
+//   constructor(config) {
+//     super(config)
+//   }
+//   getUrl() {
+//     return this.url.replace('{token}', this.token_browser)
+//   }
+// }
 
 const getMapProvier = async (mapConfig) => {
   let mapProvider
@@ -235,8 +247,8 @@ const getMapProvier = async (mapConfig) => {
       default:
         mapProvider = new wmtsProvider(mapConfig)
     }
-  } else if (mapConfig.type === 'XYZ') {
-    mapProvider = new xyzProvider(mapConfig)
+  } else if (mapConfig.type === 'WMS') {
+    mapProvider = new wmsProvider(mapConfig)
   }
 
   await mapProvider.initialize()
