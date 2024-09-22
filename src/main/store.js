@@ -1,5 +1,6 @@
-import { ipcMain } from 'electron'
+import { app, ipcMain } from 'electron'
 import Store from 'electron-store'
+import path from 'path'
 
 const config = {
   map_rules: [
@@ -235,7 +236,7 @@ const schema = {
 const initialize = (currStore) => {
   currStore.set('map_rules', config.map_rules)
   currStore.set('NOT_FIRST_RUN_FLAG', true)
-  currStore.set('LOG_FILE_PATH', 'c:/Users/xianyu/Documents/Source/dzy-electron-vue/src/main/log.txt')
+  currStore.set('LOG_FILE_PATH', path.resolve(path.dirname(app.getPath('exe')), 'log.txt'))
 }
 
 const store = new Store({ schema })
